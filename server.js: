@@ -1,0 +1,166 @@
+const express = require('express');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const path = require('path');
+
+const app = express();
+app.use(express.json());
+app.use(express.static('public'));
+
+// Configurações - SUBSTITUA PELOS SEUS VALORES
+const CAKTO_WEBHOOK_SECRET = process.env.CAKTO_WEBHOOK_SECRET || 'sua_chave_secreta_aqui';
+const PRODUCT_ID = process.env.PRODUCT_ID || 'seu_product_id';
+const EMAIL_USER = process.env.EMAIL_USER || 'seu_email@gmail.com';
+const EMAIL_PASS = process.env.EMAIL_PASS || 'sua_senha_app';
+
+const EMAIL_CONFIG = {
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
+    }
+};
+
+// Função para gerar token de acesso
+function generateAccessToken(email) {
+    const timestamp = Date.now();
+    const secret = CAKTO_WEBHOOK_SECRET;
+    const tokenData = `${email}:${timestamp}:${secret}`;
+    return Buffer.from(tokenData).toString('base64');
+}
+
+// Função para verificar assinatura do webhook
+function verifyWebhookSignature(payload, signature) {
+    if (!signature) return false;
+    
+    const expectedSignature = crypto
+        .createHmac('sha256', CAKTO_WEBHOOK_SECRET)
+        .update(payload)
+        .digest('hex');
+    
+    return crypto.timingSafeEqual(
+        Buffer.from(signature, 'hex'),
+        Buffer.from(expectedSignature, 'hex')
+    );
+}
+
+// Endpoint do webhook
+app.post('/webhook/cakto', (req, res) => {
+    try {
+        console.log('Webhook recebido:', req.body);
+        
+        const signature = req.headers['x-cakto-signature'];
+        const payload = JSON.stringify(req.body);
+        
+        // Em desenvolvimento, pular verificação de assinatura
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Modo desenvolvimento - pulando verificação de assinatura');
+        } else {
+            if (!verifyWebhookSignature(payload, signature)) {
+                console.log('Assinatura inválida');
+                return res.status(401).send('Unauthorized');
+            }
+        }
+        
+        const { event, data } = req.body;
+        
+        if (event !== 'purchase_approved') {
+            console.log('Evento ignorado:', event);
+            return res.status(200).send('OK');
+        }
+        
+        if (data.status !== 'paid') {
+            console.log('Pagamento não aprovado:', data.status);
+            return res.status(200).send('OK');
+        }
+        
+        // Processar compra aprovada
+        const customerEmail = data.customer.email;
+        const accessToken = generateAccessToken(customerEmail);
+        
+        // Gerar link de acesso
+        const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://seu-dominio.vercel.app';
+        const accessLink = `${baseUrl}/mapa-autoridade?email=${encodeURIComponent(customerEmail)}&status=approved&plan=basic&token=${accessToken}`;
+        
+        // Enviar email com acesso
+        sendAccessEmail(customerEmail, accessLink);
+        
+        console.log('Acesso liberado para:', customerEmail);
+        res.status(200).send('OK');
+        
+    } catch (error) {
+        console.error('Erro no webhook:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Função para enviar email de acesso
+async function sendAccessEmail(email, accessLink) {
+    try {
+        const transporter = nodemailer.createTransporter(EMAIL_CONFIG);
+        
+        const mailOptions = {
+            from: EMAIL_CONFIG.auth.user,
+            to: email,
+            subject: '🎯 Seu acesso ao Mapa da Autoridade Digital está liberado!',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #6b342b 0%, #ab7253 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0;">🎯 Mapa da Autoridade Digital</h1>
+                        <p style="color: #ec9949; margin: 10px 0 0 0;">Seu acesso foi liberado!</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h2 style="color: #6b342b;">Parabéns pela sua compra! 🎉</h2>
+                        
+                        <p>Olá! Seu pagamento foi confirmado e seu acesso ao <strong>Mapa da Autoridade Digital</strong> está liberado.</p>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${accessLink}" style="background: #ec9949; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                                🎯 Acessar Ferramenta
+                            </a>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 14px;">
+                            Dúvidas? Responda este email que te ajudamos!<br>
+                            <strong>Equipe Mapa da Autoridade Digital</strong>
+                        </p>
+                    </div>
+                </div>
+            `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Email enviado para:', email);
+    } catch (error) {
+        console.error('Erro ao enviar email:', error);
+    }
+}
+
+// Servir o arquivo HTML
+app.get('/mapa-autoridade', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Rota de teste
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Mapa da Autoridade Digital - Servidor funcionando!',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Rota de teste do webhook
+app.get('/webhook/test', (req, res) => {
+    res.json({ 
+        message: 'Webhook endpoint funcionando!',
+        url: '/webhook/cakto'
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+});
