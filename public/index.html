@@ -1431,12 +1431,16 @@ Ferramenta: Mapa da Autoridade Digital
             el.classList.toggle('hidden', !message);
         }
 
-        function grantAccess(email) {
+        function grantAccess(email, isUnlimitedPlan = false) {
             localStorage.setItem('caktoUserData', JSON.stringify({
                 email,
+                isUnlimited: isUnlimitedPlan,
                 verifiedAt: new Date().toISOString()
             }));
             hasBasicAccess = true;
+            isUnlimited = isUnlimitedPlan;
+            updateAccessFeatures();
+            updateGenerationCounters();
             showMainApp(email);
         }
 
@@ -1478,7 +1482,7 @@ Ferramenta: Mapa da Autoridade Digital
                         currency: 'BRL'
                     });
 
-                    grantAccess(email);
+                    grantAccess(email, result.isUnlimited);
                     showNotification('Login realizado com sucesso!', 'success');
                 } else {
                     showNotification('Não encontramos uma compra aprovada com esse e-mail.', 'error');
@@ -1515,7 +1519,7 @@ Ferramenta: Mapa da Autoridade Digital
                     const result = await checkAccessByEmail(callbackEmail);
                     if (result.approved) {
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        grantAccess(callbackEmail);
+                        grantAccess(callbackEmail, result.isUnlimited);
                         showNotification('Pagamento confirmado! Bem-vindo(a).', 'success');
                         return true;
                     }
@@ -1596,7 +1600,7 @@ Ferramenta: Mapa da Autoridade Digital
             document.getElementById('mainApp').classList.remove('hidden');
 
             document.getElementById('userWelcome').textContent = `Bem-vindo, ${userEmail.split('@')[0]}!`;
-            document.getElementById('userPlan').textContent = 'Plano Básico (R$ 67)';
+            document.getElementById('userPlan').textContent = isUnlimited ? 'Assinatura Mensal (Ilimitado)' : 'Plano Básico (R$ 67)';
 
             loadUserData();
         }
@@ -1632,14 +1636,14 @@ Ferramenta: Mapa da Autoridade Digital
                 const hoursSinceVerification = (new Date() - verifiedAt) / (1000 * 60 * 60);
 
                 if (hoursSinceVerification < 24) {
-                    grantAccess(sessionData.email);
+                    grantAccess(sessionData.email, sessionData.isUnlimited);
                     return;
                 }
 
                 try {
                     const result = await checkAccessByEmail(sessionData.email);
                     if (result.approved) {
-                        grantAccess(sessionData.email);
+                        grantAccess(sessionData.email, result.isUnlimited);
                         return;
                     }
                 } catch (error) {
