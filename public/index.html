@@ -106,28 +106,25 @@
                     </svg>
                 </div>
                 <h1 class="text-2xl font-bold text-brand-brown mb-2">Mapa da Autoridade Digital</h1>
-                <p class="text-gray-600 text-sm">Acesse com suas credenciais da Cakto</p>
+                <p class="text-gray-600 text-sm">Acesse com o e-mail usado na compra</p>
             </div>
-            
+
             <form id="loginForm" class="space-y-6">
                 <div>
                     <label for="loginEmail" class="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                    <input type="email" id="loginEmail" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Seu e-mail da Cakto">
+                    <input type="email" id="loginEmail" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="O e-mail usado na compra na Cakto">
                 </div>
-                
-                <div>
-                    <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                    <input type="password" id="loginPassword" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Sua senha da Cakto">
-                </div>
-                
+
                 <button type="submit" class="w-full bg-brand-orange text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                     Acessar Ferramenta
                 </button>
             </form>
-            
+
+            <p id="loginStatus" class="text-xs text-center text-brand-orange mt-3 hidden"></p>
+
             <div class="mt-6 text-center">
                 <p class="text-xs text-gray-500">
-                    Use as mesmas credenciais que você criou na Cakto.<br>
+                    Confirmamos automaticamente sua compra pelo e-mail informado.<br>
                     Problemas para acessar? <a href="#" class="text-brand-orange hover:underline">Contate o suporte</a>
                 </p>
             </div>
@@ -1417,142 +1414,124 @@ Ferramenta: Mapa da Autoridade Digital
         }
         
         // Authentication functions for Cakto integration
+        // A verificação de acesso acontece sempre no servidor (consultando a planilha
+        // de compras aprovadas), nunca no navegador — evita que alguém forje acesso
+        // sem ter pago, o que era possível na versão anterior baseada em token local.
+        const ACCESS_API_URL = 'https://webhook-mapa-autoridade.vercel.app/api/webhook/verify';
+
+        async function checkAccessByEmail(email) {
+            const res = await fetch(`${ACCESS_API_URL}?email=${encodeURIComponent(email)}`);
+            if (!res.ok) throw new Error('Falha ao consultar acesso');
+            return res.json();
+        }
+
+        function setLoginStatus(message) {
+            const el = document.getElementById('loginStatus');
+            el.textContent = message;
+            el.classList.toggle('hidden', !message);
+        }
+
+        function grantAccess(email) {
+            localStorage.setItem('caktoUserData', JSON.stringify({
+                email,
+                verifiedAt: new Date().toISOString()
+            }));
+            hasBasicAccess = true;
+            showMainApp(email);
+        }
+
         function handleLogin(event) {
             event.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                showNotification('Por favor, preencha todos os campos', 'error');
+
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+
+            if (!email) {
+                showNotification('Por favor, informe seu e-mail', 'error');
                 return;
             }
-            
-            // Track Facebook Pixel event
+
+            authenticateWithCakto(email);
+        }
+
+        async function authenticateWithCakto(email) {
+            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Verificando...';
+            submitBtn.disabled = true;
+            setLoginStatus('Verificando sua compra...');
+
             trackPixelEvent('InitiateCheckout', {
                 content_name: 'Mapa da Autoridade Digital - Login Attempt',
                 content_category: 'Digital Marketing Tool',
                 value: 67.00,
                 currency: 'BRL'
             });
-            
-            authenticateWithCakto(email, password);
-        }
-        
-        function authenticateWithCakto(email, password) {
-            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Verificando...';
-            submitBtn.disabled = true;
-            
-            // Check for purchase callback parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const callbackEmail = urlParams.get('email');
-            const callbackStatus = urlParams.get('status');
-            const callbackPlan = urlParams.get('plan');
-            const accessToken = urlParams.get('token');
-            
-            setTimeout(() => {
-                let loginSuccess = false;
-                let isUnlimitedUser = false;
-                
-                // Check if this is a callback from Cakto purchase
-                if (callbackEmail && callbackStatus === 'approved' && accessToken) {
-                    if (email === callbackEmail) {
-                        // Verify token is valid and not expired
-                        if (verifyAccessToken(accessToken, email)) {
-                            loginSuccess = true;
-                            isUnlimitedUser = callbackPlan === 'unlimited';
-                            
-                            // Track successful purchase
-                            trackPixelEvent('Purchase', {
-                                content_name: 'Mapa da Autoridade Digital',
-                                content_category: 'Digital Marketing Tool',
-                                value: isUnlimitedUser ? 29.90 : 67.00,
-                                currency: 'BRL'
-                            });
-                            
-                            // Store purchase verification
-                            const purchaseData = {
-                                email: email,
-                                token: accessToken,
-                                purchaseDate: new Date().toISOString(),
-                                plan: callbackPlan,
-                                verified: true
-                            };
-                            localStorage.setItem('caktoPurchaseData', JSON.stringify(purchaseData));
-                            
-                            // Clear URL parameters
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                        }
-                    }
-                } else {
-                    // Check if user has valid purchase data stored
-                    const storedPurchase = localStorage.getItem('caktoPurchaseData');
-                    if (storedPurchase) {
-                        const purchaseData = JSON.parse(storedPurchase);
-                        if (purchaseData.email === email && purchaseData.verified) {
-                            // Check if purchase is still valid (within 30 days for basic, unlimited for unlimited plan)
-                            const purchaseDate = new Date(purchaseData.purchaseDate);
-                            const now = new Date();
-                            const daysSincePurchase = (now - purchaseDate) / (1000 * 60 * 60 * 24);
-                            
-                            if (purchaseData.plan === 'unlimited' || daysSincePurchase <= 30) {
-                                loginSuccess = true;
-                                isUnlimitedUser = purchaseData.plan === 'unlimited';
-                            }
-                        }
-                    }
-                }
-                
-                if (loginSuccess) {
-                    const userData = {
-                        email: email,
-                        hasBasicAccess: true,
-                        isUnlimited: isUnlimitedUser,
-                        loginTime: new Date().toISOString()
-                    };
-                    
-                    localStorage.setItem('caktoUserData', JSON.stringify(userData));
-                    
-                    hasBasicAccess = true;
-                    isUnlimited = userData.isUnlimited;
-                    
-                    showMainApp(email);
-                    
+
+            try {
+                const result = await checkAccessByEmail(email);
+
+                if (result.approved) {
+                    trackPixelEvent('Purchase', {
+                        content_name: 'Mapa da Autoridade Digital',
+                        content_category: 'Digital Marketing Tool',
+                        value: 67.00,
+                        currency: 'BRL'
+                    });
+
+                    grantAccess(email);
                     showNotification('Login realizado com sucesso!', 'success');
                 } else {
-                    showNotification('Acesso negado. Você precisa adquirir o produto na Cakto para usar esta ferramenta.', 'error');
-                    
-                    // Show purchase button
+                    showNotification('Não encontramos uma compra aprovada com esse e-mail.', 'error');
                     showPurchaseModal();
-                    
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
                 }
-            }, 2000);
-        }
-        
-        function verifyAccessToken(token, email) {
-            // Simple token verification - in production, this should be more secure
-            // Token format: base64(email:timestamp:secret)
-            try {
-                const decoded = atob(token);
-                const [tokenEmail, timestamp, secret] = decoded.split(':');
-                
-                if (tokenEmail !== email) return false;
-                
-                // Check if token is not older than 24 hours
-                const tokenTime = new Date(parseInt(timestamp));
-                const now = new Date();
-                const hoursSinceToken = (now - tokenTime) / (1000 * 60 * 60);
-                
-                return hoursSinceToken <= 24;
-            } catch (e) {
-                return false;
+            } catch (error) {
+                console.error('Erro ao verificar acesso:', error);
+                showNotification('Erro ao verificar seu acesso. Tente novamente em instantes.', 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                setLoginStatus('');
             }
         }
-        
+
+        // Quando a Cakto redireciona o comprador de volta com ?email=..., confirmamos
+        // a compra automaticamente. Como o webhook da Cakto grava a compra de forma
+        // assíncrona, tentamos algumas vezes com um pequeno intervalo (o pagamento pode
+        // ainda estar sendo processado no exato momento em que a página carrega).
+        async function tryAutoLoginFromCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const callbackEmail = (urlParams.get('email') || '').trim().toLowerCase();
+
+            if (!callbackEmail) return false;
+
+            document.getElementById('loginEmail').value = callbackEmail;
+            setLoginStatus('Confirmando seu pagamento, isso pode levar alguns segundos...');
+
+            const maxAttempts = 10;
+            const delayMs = 3000;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const result = await checkAccessByEmail(callbackEmail);
+                    if (result.approved) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        grantAccess(callbackEmail);
+                        showNotification('Pagamento confirmado! Bem-vindo(a).', 'success');
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar pagamento:', error);
+                }
+
+                if (attempt < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+            }
+
+            setLoginStatus('Ainda não localizamos sua compra. Tente novamente em instantes ou contate o suporte.');
+            return false;
+        }
+
         function showPurchaseModal() {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
@@ -1612,80 +1591,73 @@ Ferramenta: Mapa da Autoridade Digital
         
         function showMainApp(userEmail) {
             document.getElementById('loginScreen').classList.add('hidden');
-            
+
             document.getElementById('mainHeader').classList.remove('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
-            
+
             document.getElementById('userWelcome').textContent = `Bem-vindo, ${userEmail.split('@')[0]}!`;
-            
-            const planText = isUnlimited ? 'Plano Ilimitado (R$ 29,90/mês)' : 'Plano Básico (R$ 67)';
-            document.getElementById('userPlan').textContent = planText;
-            
-            checkCaktoAuth();
-            
+            document.getElementById('userPlan').textContent = 'Plano Básico (R$ 67)';
+
             loadUserData();
         }
-        
+
         function logout() {
             localStorage.removeItem('caktoUserData');
-            
+
             document.getElementById('mainHeader').classList.add('hidden');
             document.getElementById('mainApp').classList.add('hidden');
-            
+
             document.getElementById('loginScreen').classList.remove('hidden');
-            
+
             document.getElementById('loginForm').reset();
-            
+
             hasBasicAccess = false;
             isUnlimited = false;
-            
+
             showNotification('Logout realizado com sucesso!', 'success');
         }
-        
-        function checkCaktoAuth() {
+
+        // Verifica o acesso ao carregar a página: primeiro trata um eventual retorno
+        // da Cakto (?email=...), depois uma sessão local já confirmada anteriormente.
+        // Uma sessão local só evita reconsultar o servidor por 24h; passado esse
+        // prazo, revalidamos contra a planilha antes de liberar o acesso de novo.
+        async function checkCaktoAuth() {
+            const cameFromCallback = await tryAutoLoginFromCallback();
+            if (cameFromCallback) return;
+
             const savedUser = localStorage.getItem('caktoUserData');
             if (savedUser) {
-                const userData = JSON.parse(savedUser);
-                
-                const loginTime = new Date(userData.loginTime);
-                const now = new Date();
-                const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
-                
-                if (hoursSinceLogin < 24) {
-                    hasBasicAccess = userData.hasBasicAccess;
-                    isUnlimited = userData.isUnlimited;
-                    
-                    checkSubscriptionStatus(userData.email);
-                    
-                    showMainApp(userData.email);
+                const sessionData = JSON.parse(savedUser);
+                const verifiedAt = new Date(sessionData.verifiedAt);
+                const hoursSinceVerification = (new Date() - verifiedAt) / (1000 * 60 * 60);
+
+                if (hoursSinceVerification < 24) {
+                    grantAccess(sessionData.email);
                     return;
                 }
+
+                try {
+                    const result = await checkAccessByEmail(sessionData.email);
+                    if (result.approved) {
+                        grantAccess(sessionData.email);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Erro ao revalidar acesso:', error);
+                }
             }
-            
+
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('mainHeader').classList.add('hidden');
             document.getElementById('mainApp').classList.add('hidden');
         }
-        
-        function checkSubscriptionStatus(email) {
-            setTimeout(() => {
-                const unlimitedAccess = localStorage.getItem('caktoUnlimitedAccess');
-                isUnlimited = unlimitedAccess === 'true';
-                
-                updateAccessFeatures();
-                updateGenerationCounters();
-                
-                const planText = isUnlimited ? 'Plano Ilimitado (R$ 29,90/mês)' : 'Plano Básico (R$ 67)';
-                document.getElementById('userPlan').textContent = planText;
-            }, 1000);
-        }
-        
+
         // Inicialização da aplicação
         function initializeApp() {
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            
+
             checkCaktoAuth();
-            
+
             setupAuthorityChecks();
             loadGenerationCounts();
         }
