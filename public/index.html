@@ -39,16 +39,100 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Public+Sans:wght@400;500;600;700&display=swap">
     <style>
+        :root {
+            --bg-base: #1b1310;
+            --bg-elevated: #241b17;
+            --text-primary: #f6efe8;
+            --text-secondary: #a89484;
+            --text-tertiary: #6f5e50;
+            --rule-strong: rgba(236,153,73,0.55);
+            --rule-soft: rgba(255,255,255,0.12);
+            --rule-faint: rgba(255,255,255,0.08);
+        }
         body {
             box-sizing: border-box;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Public Sans', system-ui, sans-serif;
         }
-        
+        h1, h2, h3, h4, .serif {
+            font-family: 'Newsreader', Georgia, serif;
+        }
+        .bg-photo {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 15%;
+        }
+        .bg-photo-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(27,19,16,0.94) 0%, rgba(27,19,16,0.9) 30%, rgba(27,19,16,0.88) 100%);
+        }
+        /* loginScreen/mainHeader/mainApp precisam de um stacking context
+           próprio (position + z-index) para ficarem acima da foto de fundo
+           fixa, que é irmã deles em vez de ficar atrás do background sólido
+           do body. */
+        #loginScreen, #mainHeader, #mainApp {
+            position: relative;
+            z-index: 1;
+        }
+
         .gradient-bg {
-            background: linear-gradient(135deg, #6b342b 0%, #ab7253 100%);
+            background: linear-gradient(120deg, #6b342b 0%, #ab7253 100%);
+        }
+        .card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--rule-faint);
+            border-radius: 20px;
         }
         .card-shadow {
-            box-shadow: 0 10px 25px rgba(107, 52, 43, 0.1);
+            box-shadow: 0 18px 44px rgba(0,0,0,0.4);
+        }
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+        .field-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1.5px solid var(--text-tertiary);
+            background: transparent;
+            padding: 10px 2px;
+            font-size: 15px;
+            font-family: 'Public Sans', sans-serif;
+            color: var(--text-primary);
+            border-radius: 0;
+        }
+        .field-input::placeholder {
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+        .field-input:focus {
+            outline: none;
+            border-bottom-color: #ec9949;
+        }
+        .subcard {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--rule-faint);
+            border-radius: 14px;
+        }
+        .section-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500;
+            font-size: 26px;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+            margin-bottom: 24px;
         }
         .progress-bar {
             transition: width 0.5s ease-in-out;
@@ -67,122 +151,115 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(236, 153, 73, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(236, 153, 73, 0); }
         }
-        
+
         .section {
             display: none;
         }
-        
+
         .section.active {
             display: block;
         }
-        
+
         .tab-btn {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 13.5px;
+            letter-spacing: 0.03em;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 6px;
         }
-        
+
         .tab-btn:hover {
-            background-color: rgba(236, 153, 73, 0.1);
+            color: var(--text-primary);
         }
-        
+
         .tab-btn.active {
-            background-color: #ec9949 !important;
-            color: white !important;
+            background-color: transparent !important;
+            color: #ec9949 !important;
+            border-bottom-color: #ec9949;
         }
+
+        /* Recolore os utilitários Tailwind remanescentes (pensados para o tema
+           claro original) para o novo tema escuro, sem precisar tocar em cada
+           ocorrência individualmente. */
+        .bg-white { background-color: var(--bg-elevated) !important; }
+        .text-brand-brown { color: var(--text-primary) !important; }
+        .bg-gray-50 { background-color: rgba(255,255,255,0.04) !important; }
+        .bg-gray-200 { background-color: rgba(255,255,255,0.1) !important; }
+        .text-gray-600, .text-gray-700 { color: var(--text-secondary) !important; }
+        .bg-brand-neutral.bg-opacity-5, .bg-brand-neutral.bg-opacity-10 { background-color: rgba(255,255,255,0.05) !important; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body>
+    <!-- Fundo do app (visível quando logado) -->
+    <img class="bg-photo" src="mapa-fundo.jpg" alt="">
+    <div class="bg-photo-overlay"></div>
+
     <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-brand-brown to-brand-light flex items-center justify-center p-6">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-brand-orange rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                        <path d="M3 18h18v2H3v-2z"/>
-                        <circle cx="7" cy="14" r="1"/>
-                        <circle cx="17" cy="14" r="1"/>
-                        <path d="M9 16h6v1H9v-1z"/>
-                    </svg>
-                </div>
-                <h1 class="text-2xl font-bold text-brand-brown mb-2">Mapa da Autoridade Digital</h1>
-                <p class="text-gray-600 text-sm">Acesse com o e-mail usado na compra</p>
-            </div>
+    <div id="loginScreen" class="min-h-screen flex flex-col items-center justify-center p-6" style="position:relative;overflow:hidden;">
+        <img class="bg-photo" src="mapa-fundo-login.jpg" alt="" style="object-position:center 20%;">
+        <div class="bg-photo-overlay"></div>
 
-            <form id="loginForm" class="space-y-6">
-                <div>
-                    <label for="loginEmail" class="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                    <input type="email" id="loginEmail" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="O e-mail usado na compra na Cakto">
-                </div>
+        <span class="serif" style="position:relative;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--text-tertiary);font-family:'Public Sans',sans-serif;">Autoridade Digital</span>
+        <h1 class="serif" style="position:relative;margin:18px 0 0 0;font-size:38px;font-weight:500;letter-spacing:-0.01em;text-align:center;color:var(--text-primary);">Mapa da Autoridade Digital</h1>
+        <p class="serif" style="position:relative;margin:10px 0 0 0;font-size:16px;font-style:italic;color:var(--text-secondary);text-align:center;">Acesse com o e-mail usado na compra</p>
 
-                <button type="submit" class="w-full bg-brand-orange text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
-                    Acessar Ferramenta
-                </button>
-            </form>
+        <div style="position:relative;width:100%;max-width:400px;margin-top:26px;">
+            <div style="height:2px;background:var(--rule-strong);"></div>
+            <div style="height:1px;background:var(--rule-soft);margin-top:3px;"></div>
+        </div>
 
-            <p id="loginStatus" class="text-xs text-center text-brand-orange mt-3 hidden"></p>
+        <form id="loginForm" style="position:relative;width:100%;max-width:340px;margin-top:48px;">
+            <label for="loginEmail" class="field-label">E-mail</label>
+            <input type="email" id="loginEmail" required class="field-input" placeholder="O e-mail usado na compra na Cakto">
 
-            <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">
+            <button type="submit" style="width:100%;height:50px;margin-top:24px;background:#ec9949;color:#1b1310;border:none;border-radius:0;font-size:12.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;font-family:'Public Sans',sans-serif;cursor:pointer;">
+                Acessar Ferramenta
+            </button>
+        </form>
+
+        <p id="loginStatus" class="text-xs text-center mt-3 hidden" style="position:relative;color:#ec9949;"></p>
+
+        <div class="mt-6 text-center" style="position:relative;max-width:340px;">
+            <p class="text-xs" style="color:var(--text-secondary);line-height:1.7;">
                     Confirmamos automaticamente sua compra pelo e-mail informado.<br>
-                    Problemas para acessar? <a href="#" class="text-brand-orange hover:underline">Contate o suporte</a>
+                    Problemas para acessar? <a href="#" style="color:#ec9949;">Contate o suporte</a>
                 </p>
-            </div>
         </div>
     </div>
 
     <!-- Header -->
-    <header id="mainHeader" class="gradient-bg text-white py-6 px-6 shadow-lg hidden">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <div class="w-12 h-12 bg-brand-orange rounded-xl flex items-center justify-center shadow-lg">
-                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Mapa da Autoridade Digital</h1>
-                    <p class="text-brand-orange text-xs md:text-sm font-medium">Construa sua presença digital estratégica</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center space-x-4">
-                <div class="text-right hidden md:block">
-                    <p class="text-sm text-brand-orange font-medium" id="userWelcome">Bem-vindo!</p>
-                    <p class="text-xs text-gray-300" id="userPlan">Plano Básico (R$ 67)</p>
-                </div>
-                <button onclick="logout()" class="bg-brand-light hover:bg-opacity-80 text-white px-3 py-2 rounded-lg text-sm transition-colors">
-                    Sair
-                </button>
-            </div>
+    <header id="mainHeader" class="hidden" style="padding:28px 24px 0 24px;">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <span class="serif" style="font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-tertiary);font-family:'Public Sans',sans-serif;">Painel Pessoal · BSM Digital</span>
+            <button onclick="logout()" style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#ec9949;background:transparent;border:none;cursor:pointer;">Sair</button>
+        </div>
+        <div class="max-w-6xl mx-auto flex items-baseline justify-between" style="margin-top:16px;">
+            <h1 style="font-size:30px;font-weight:500;letter-spacing:-0.01em;color:var(--text-primary);">Mapa da Autoridade Digital</h1>
+            <span id="userWelcome" style="font-size:14px;color:var(--text-secondary);">Bem-vindo!</span>
+        </div>
+        <p id="userPlan" class="hidden"></p>
+        <div class="max-w-6xl mx-auto" style="margin-top:18px;">
+            <div style="height:2px;background:var(--rule-strong);"></div>
+            <div style="height:1px;background:var(--rule-soft);margin-top:3px;"></div>
         </div>
     </header>
 
     <!-- Main Container -->
     <div id="mainApp" class="hidden">
-        <div class="min-h-screen bg-gray-50 py-8">
+        <div class="min-h-screen py-8">
             <!-- Navigation Tabs -->
-            <div class="max-w-6xl mx-auto mb-8 px-4">
-                <nav class="bg-white rounded-lg p-1 card-shadow">
-                    <div class="flex flex-wrap justify-center space-x-1">
-                        <button onclick="showSection('profile')" id="tab-profile" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            📋 Perfil
-                        </button>
-                        <button onclick="showSection('messages')" id="tab-messages" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            💬 Mensagens-Chave
-                        </button>
-                        <button onclick="showSection('authority')" id="tab-authority" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            📊 Raio-X Autoridade
-                        </button>
-                        <button onclick="showSection('headlines')" id="tab-headlines" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            ✨ Headlines/Bios
-                        </button>
-                        <button onclick="showSection('planner')" id="tab-planner" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            📅 Planner/Conteúdo
-                        </button>
-                        <button onclick="showSection('dashboard')" id="tab-dashboard" class="tab-btn py-3 px-4 rounded-md font-medium transition-all text-gray-600 hover:text-brand-brown">
-                            🎯 Dashboard
-                        </button>
+            <div class="max-w-6xl mx-auto mb-8 px-6">
+                <nav>
+                    <div class="flex flex-wrap items-center" style="gap:24px;padding:16px 0;">
+                        <button onclick="showSection('profile')" id="tab-profile" class="tab-btn">Perfil</button>
+                        <button onclick="showSection('messages')" id="tab-messages" class="tab-btn">Mensagens-Chave</button>
+                        <button onclick="showSection('authority')" id="tab-authority" class="tab-btn">Raio-X Autoridade</button>
+                        <button onclick="showSection('headlines')" id="tab-headlines" class="tab-btn">Headlines/Bios</button>
+                        <button onclick="showSection('planner')" id="tab-planner" class="tab-btn">Planner/Conteúdo</button>
+                        <button onclick="showSection('dashboard')" id="tab-dashboard" class="tab-btn">Dashboard</button>
                     </div>
                 </nav>
             </div>
@@ -190,20 +267,20 @@
             <!-- Profile Section -->
             <div id="section-profile" class="section active fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Cadastro de Perfil</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Cadastro de Perfil</h2>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
-                                <input type="text" id="userName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Seu nome completo">
+                                <label class="field-label">Nome Completo</label>
+                                <input type="text" id="userName" class="field-input" placeholder="Seu nome completo">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
-                                <input type="text" id="userCompany" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Nome da sua empresa">
+                                <label class="field-label">Empresa</label>
+                                <input type="text" id="userCompany" class="field-input" placeholder="Nome da sua empresa">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Setor de Atuação</label>
-                                <select id="userSector" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent">
+                                <label class="field-label">Setor de Atuação</label>
+                                <select id="userSector" class="field-input">
                                     <option value="">Selecione seu setor</option>
                                     <option value="tecnologia">Tecnologia</option>
                                     <option value="consultoria">Consultoria</option>
@@ -234,8 +311,8 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Público-Alvo</label>
-                                <input type="text" id="userTarget" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: Empreendedores, CEOs, Profissionais de TI">
+                                <label class="field-label">Público-Alvo</label>
+                                <input type="text" id="userTarget" class="field-input" placeholder="Ex: Empreendedores, CEOs, Profissionais de TI">
                             </div>
                         </div>
                         <button onclick="saveProfile()" class="mt-6 bg-brand-orange text-white px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors pulse-orange">
@@ -248,8 +325,8 @@
             <!-- Messages Section -->
             <div id="section-messages" class="section fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Descobrindo suas Mensagens-Chave</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Descobrindo suas Mensagens-Chave</h2>
                         
                         <!-- Strategic Questions -->
                         <div id="strategicQuestions" class="space-y-6">
@@ -258,28 +335,28 @@
                                 
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">1. Qual problema você resolve melhor que qualquer outra pessoa?</label>
-                                        <textarea id="question1" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: Ajudo empresas a automatizar processos manuais que consomem tempo..."></textarea>
+                                        <label class="field-label">1. Qual problema você resolve melhor que qualquer outra pessoa?</label>
+                                        <textarea id="question1" rows="2" class="field-input" placeholder="Ex: Ajudo empresas a automatizar processos manuais que consomem tempo..."></textarea>
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">2. Qual resultado seus clientes mais valorizam no seu trabalho?</label>
-                                        <textarea id="question2" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: Economia de tempo, aumento de vendas, redução de custos..."></textarea>
+                                        <label class="field-label">2. Qual resultado seus clientes mais valorizam no seu trabalho?</label>
+                                        <textarea id="question2" rows="2" class="field-input" placeholder="Ex: Economia de tempo, aumento de vendas, redução de custos..."></textarea>
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">3. O que te motiva a fazer o que faz? Qual é seu 'porquê'?</label>
-                                        <textarea id="question3" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: Acredito que toda empresa merece crescer de forma sustentável..."></textarea>
+                                        <label class="field-label">3. O que te motiva a fazer o que faz? Qual é seu 'porquê'?</label>
+                                        <textarea id="question3" rows="2" class="field-input" placeholder="Ex: Acredito que toda empresa merece crescer de forma sustentável..."></textarea>
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">4. Qual é sua experiência ou conhecimento único que poucos têm?</label>
-                                        <textarea id="question4" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: 15 anos em multinacionais, certificação específica, metodologia própria..."></textarea>
+                                        <label class="field-label">4. Qual é sua experiência ou conhecimento único que poucos têm?</label>
+                                        <textarea id="question4" rows="2" class="field-input" placeholder="Ex: 15 anos em multinacionais, certificação específica, metodologia própria..."></textarea>
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">5. Como você gostaria de ser lembrado pelos seus clientes?</label>
-                                        <textarea id="question5" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Ex: Como alguém confiável, inovador, que sempre entrega resultados..."></textarea>
+                                        <label class="field-label">5. Como você gostaria de ser lembrado pelos seus clientes?</label>
+                                        <textarea id="question5" rows="2" class="field-input" placeholder="Ex: Como alguém confiável, inovador, que sempre entrega resultados..."></textarea>
                                     </div>
                                 </div>
                                 
@@ -292,26 +369,26 @@
                         <!-- Generated Messages -->
                         <div id="generatedMessages" class="space-y-6 hidden">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Propósito Central</label>
-                                <textarea id="purpose" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Seu propósito será gerado automaticamente..."></textarea>
+                                <label class="field-label">Propósito Central</label>
+                                <textarea id="purpose" rows="3" class="field-input" placeholder="Seu propósito será gerado automaticamente..."></textarea>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Principais Diferenciais</label>
-                                <textarea id="differentials" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Seus diferenciais serão identificados..."></textarea>
+                                <label class="field-label">Principais Diferenciais</label>
+                                <textarea id="differentials" rows="3" class="field-input" placeholder="Seus diferenciais serão identificados..."></textarea>
                             </div>
                             <div class="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Missão</label>
-                                    <textarea id="mission" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Sua missão será definida..."></textarea>
+                                    <label class="field-label">Missão</label>
+                                    <textarea id="mission" rows="2" class="field-input" placeholder="Sua missão será definida..."></textarea>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Valores</label>
-                                    <textarea id="values" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Seus valores serão extraídos..."></textarea>
+                                    <label class="field-label">Valores</label>
+                                    <textarea id="values" rows="2" class="field-input" placeholder="Seus valores serão extraídos..."></textarea>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Frases de Impacto</label>
-                                <textarea id="impactPhrases" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent" placeholder="Frases marcantes serão sugeridas..."></textarea>
+                                <label class="field-label">Frases de Impacto</label>
+                                <textarea id="impactPhrases" rows="2" class="field-input" placeholder="Frases marcantes serão sugeridas..."></textarea>
                             </div>
                             
                             <div class="flex space-x-4 mt-6">
@@ -321,7 +398,7 @@
                                 <button onclick="saveMessages()" class="bg-brand-orange text-white px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                                     Salvar Mensagens
                                 </button>
-                                <button onclick="backToQuestions()" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
+                                <button onclick="backToQuestions()" style="background:var(--text-tertiary);color:var(--text-primary);" class="px-6 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                                     ← Voltar às Perguntas
                                 </button>
                             </div>
@@ -340,14 +417,14 @@
             <!-- Authority Section -->
             <div id="section-authority" class="section fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Raio-X da Autoridade Digital</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Raio-X da Autoridade Digital</h2>
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-lg font-medium">Pontuação Geral</span>
                                 <span id="totalScore" class="text-2xl font-bold text-brand-orange">0/100</span>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div style="width:100%;background:rgba(255,255,255,0.1);border-radius:999px;height:12px;">
                                 <div id="progressBar" class="progress-bar bg-brand-orange h-3 rounded-full" style="width: 0%"></div>
                             </div>
                         </div>
@@ -358,22 +435,22 @@
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="15">
                                         <span>LinkedIn otimizado e ativo</span>
-                                        <span class="text-sm text-gray-500">(15 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(15 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="10">
                                         <span>Instagram profissional</span>
-                                        <span class="text-sm text-gray-500">(10 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(10 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="20">
                                         <span>Site/blog próprio</span>
-                                        <span class="text-sm text-gray-500">(20 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(20 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="10">
                                         <span>YouTube ou podcast</span>
-                                        <span class="text-sm text-gray-500">(10 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(10 pts)</span>
                                     </label>
                                 </div>
                             </div>
@@ -383,22 +460,22 @@
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="15">
                                         <span>Publica conteúdo regularmente</span>
-                                        <span class="text-sm text-gray-500">(15 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(15 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="10">
                                         <span>Interage com a audiência</span>
-                                        <span class="text-sm text-gray-500">(10 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(10 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="10">
                                         <span>Compartilha conhecimento</span>
-                                        <span class="text-sm text-gray-500">(10 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(10 pts)</span>
                                     </label>
                                     <label class="flex items-center space-x-3 cursor-pointer">
                                         <input type="checkbox" class="authority-check w-5 h-5 text-brand-orange rounded" data-points="10">
                                         <span>Participa de eventos/lives</span>
-                                        <span class="text-sm text-gray-500">(10 pts)</span>
+                                        <span style="font-size:13px;color:var(--text-tertiary);">(10 pts)</span>
                                     </label>
                                 </div>
                             </div>
@@ -414,10 +491,10 @@
             <!-- Headlines Section -->
             <div id="section-headlines" class="section fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Gerador de Headlines e Bios</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Gerador de Headlines e Bios</h2>
                         <div class="grid md:grid-cols-3 gap-6">
-                            <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="subcard p-6">
                                 <h3 class="font-semibold text-brand-brown mb-4 flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 0 3L7 15l-4 1 1-4L12.5 3.5a2.121 2.121 0 0 1 3 0Z"/>
@@ -425,7 +502,7 @@
                                     LinkedIn
                                 </h3>
                                 <div id="linkedinHeadlines" class="space-y-3">
-                                    <div class="bg-white p-3 rounded border cursor-pointer hover:border-brand-orange transition-colors" onclick="selectHeadline(this)">
+                                    <div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this)">
                                         <p class="text-sm">Especialista em [Área] | Ajudo [Público] a [Resultado]</p>
                                     </div>
                                 </div>
@@ -437,11 +514,11 @@
                                         🔄
                                     </button>
                                 </div>
-                                <div class="text-xs text-gray-500 mt-2 text-center">
+                                <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
                                     <span id="linkedinCount">0</span>/10 gerações
                                 </div>
                             </div>
-                            <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="subcard p-6">
                                 <h3 class="font-semibold text-brand-brown mb-4 flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
@@ -449,7 +526,7 @@
                                     Instagram
                                 </h3>
                                 <div id="instagramBios" class="space-y-3">
-                                    <div class="bg-white p-3 rounded border cursor-pointer hover:border-brand-orange transition-colors" onclick="selectHeadline(this)">
+                                    <div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this)">
                                         <p class="text-sm">🎯 [Especialidade]<br>✨ [Benefício Principal]<br>📩 [CTA]</p>
                                     </div>
                                 </div>
@@ -461,11 +538,11 @@
                                         🔄
                                     </button>
                                 </div>
-                                <div class="text-xs text-gray-500 mt-2 text-center">
+                                <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
                                     <span id="instagramCount">0</span>/10 gerações
                                 </div>
                             </div>
-                            <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="subcard p-6">
                                 <h3 class="font-semibold text-brand-brown mb-4 flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-brand-orange" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
@@ -473,7 +550,7 @@
                                     Networking
                                 </h3>
                                 <div id="networkingPitches" class="space-y-3">
-                                    <div class="bg-white p-3 rounded border cursor-pointer hover:border-brand-orange transition-colors" onclick="selectHeadline(this)">
+                                    <div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this)">
                                         <p class="text-sm">"Olá, sou [Nome], [Posição] e ajudo [Público] com [Solução]"</p>
                                     </div>
                                 </div>
@@ -485,7 +562,7 @@
                                         🔄
                                     </button>
                                 </div>
-                                <div class="text-xs text-gray-500 mt-2 text-center">
+                                <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
                                     <span id="networkingCount">0</span>/10 gerações
                                 </div>
                             </div>
@@ -493,7 +570,7 @@
                         <div id="selectedHeadline" class="mt-6 hidden">
                             <div class="bg-brand-neutral bg-opacity-10 rounded-lg p-4">
                                 <h3 class="font-medium text-brand-brown mb-2">✅ Headline Selecionada:</h3>
-                                <p id="selectedText" class="text-gray-700"></p>
+                                <p id="selectedText" style="color:var(--text-secondary);"></p>
                                 <button onclick="copyToClipboard()" class="mt-3 bg-brand-brown text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition-colors">
                                     📋 Copiar
                                 </button>
@@ -506,12 +583,12 @@
             <!-- Planner Section -->
             <div id="section-planner" class="section fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Planner de Conteúdo</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Planner de Conteúdo</h2>
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de ideias</label>
-                                <select id="contentAmount" class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:border-transparent">
+                                <label class="field-label">Quantidade de ideias</label>
+                                <select id="contentAmount" class="field-input" style="width:auto;display:inline-block;">
                                     <option value="7">7 ideias (1 semana)</option>
                                     <option value="14">14 ideias (2 semanas)</option>
                                     <option value="21">21 ideias (3 semanas)</option>
@@ -536,8 +613,8 @@
             <!-- Dashboard Section -->
             <div id="section-dashboard" class="section fade-in">
                 <div class="max-w-6xl mx-auto px-4">
-                    <div class="bg-white rounded-xl p-6 md:p-8 card-shadow">
-                        <h2 class="text-2xl font-bold text-brand-brown mb-6">Dashboard - Mapa Estratégico</h2>
+                    <div class="card p-6 md:p-8 card-shadow">
+                        <h2 class="section-title">Dashboard - Mapa Estratégico</h2>
                         <div class="space-y-8">
                             <!-- Strategic Map Visualization -->
                             <div class="bg-white border-2 border-brand-orange border-opacity-20 rounded-xl p-8">
@@ -735,7 +812,7 @@
             const suggestionsList = document.getElementById('suggestionsList');
             
             suggestionsList.innerHTML = suggestions.map(suggestion => 
-                `<div class="bg-white p-3 rounded border cursor-pointer hover:border-brand-orange transition-colors" onclick="applySuggestion('${suggestion.field}', '${suggestion.text}')">
+                `<div class="subcard p-3" style="cursor:pointer;" onclick="applySuggestion('${suggestion.field}', '${suggestion.text}')">
                     <strong>${suggestion.label}:</strong> ${suggestion.text}
                 </div>`
             ).join('');
@@ -1069,7 +1146,7 @@
         function displayHeadlines(containerId, headlines) {
             const container = document.getElementById(containerId);
             container.innerHTML = headlines.map(headline => 
-                `<div class="bg-white p-3 rounded border cursor-pointer hover:border-brand-orange transition-colors" onclick="selectHeadline(this)">
+                `<div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this)">
                     <p class="text-sm">${headline.replace(/\n/g, '<br>')}</p>
                 </div>`
             ).join('');
@@ -1129,7 +1206,7 @@
                         <span class="text-xs bg-brand-orange text-white px-2 py-1 rounded">${idea.type}</span>
                     </div>
                     <p class="text-sm text-gray-700 mb-2">${idea.title}</p>
-                    <p class="text-xs text-gray-500">${idea.description}</p>
+                    <p style="font-size:11px;color:var(--text-tertiary);">${idea.description}</p>
                     <div class="mt-3 flex space-x-2">
                         <button onclick="copyContent('${idea.title}')" class="text-xs bg-brand-brown text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors">
                             Copiar
