@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa da Autoridade Digital</title>
+<meta name="description" content="Painel de Autoridade Digital com IA para quem quer vender mais pelas redes sociais: mensagens-chave, títulos, frases para a bio, apresentações e ideias de conteúdo.">
+<meta property="og:title" content="Mapa da Autoridade Digital">
+<meta property="og:description" content="Venda mais nas redes sociais com um posicionamento atrativo que transforma seguidores em clientes.">
+<meta property="og:image" content="https://mapa-autoridade-digital.vercel.app/mapa-fundo-login.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Public+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #1b1310;
+    --bg-deep: #140e0b;
+    --bg-raised: #241b17;
+    --ink: #f6efe8;
+    --ink-2: #c9b7a7;
+    --ink-3: #8a7666;
+    --orange: #ec9949;
+    --orange-soft: rgba(236,153,73,0.14);
+    --rule: rgba(236,153,73,0.55);
+    --rule-soft: rgba(246,239,232,0.12);
+    --serif: 'Newsreader', Georgia, serif;
+    --sans: 'Public Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', ui-monospace, monospace;
+    --checkout: 'https://pay.cakto.com.br/38gu88y';
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; }
+
+  /* grão de papel por cima de tudo */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+  .rule-double {
+    border: 0;
+    height: 5px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    opacity: 0.8;
+  }
+
+  /* ───────── BOTÃO ───────── */
+  .cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 14px;
+    min-height: 58px;
+    padding: 0 34px;
+    background: var(--orange);
+    color: var(--bg-deep);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    position: relative;
+    transition: transform .25s ease, box-shadow .25s ease;
+    box-shadow: 6px 6px 0 rgba(236,153,73,0.25);
+  }
+  .cta:hover { transform: translate(-2px,-2px); box-shadow: 9px 9px 0 rgba(236,153,73,0.3); }
+  .cta svg { transition: transform .25s ease; }
+  .cta:hover svg { transform: translateX(4px); }
+  .cta-note {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .cta-note span { color: var(--ink-3); padding: 0 6px; }
+
+  /* ───────── CAPA ───────── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+  }
+  .hero-photo {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center 25%;
+    transform: scale(1.08);
+    animation: drift 18s ease-out forwards;
+  }
+  @keyframes drift { to { transform: scale(1); } }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background:
+      radial-gradient(ellipse at 20% 35%, rgba(27,19,16,0.55), transparent 60%),
+      linear-gradient(180deg, rgba(20,14,11,0.72) 0%, rgba(27,19,16,0.82) 45%, var(--bg) 100%);
+  }
+  .masthead {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 26px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .masthead .brand { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  .masthead .brand b { color: var(--ink); font-weight: 500; }
+  .masthead .edition { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--ink-3); }
+
+  .hero-body {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-top: 56px; padding-bottom: 72px;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(36px, 6.2vw, 72px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    max-width: 19ch;
+    margin: 22px 0 28px;
+  }
+  .hero h1 em { font-style: italic; color: var(--orange); font-weight: 400; }
+  .hero .lede {
+    font-family: var(--serif);
+    font-size: clamp(19px, 2.2vw, 23px);
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 36em;
+    margin-bottom: 40px;
+  }
+  .hero .lede strong { color: var(--ink); font-weight: 500; }
+
+  .reveal { opacity: 0; transform: translateY(18px); animation: rise .9s cubic-bezier(.2,.7,.2,1) forwards; }
+  .d1 { animation-delay: .15s; } .d2 { animation-delay: .3s; } .d3 { animation-delay: .45s; } .d4 { animation-delay: .6s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .scroll-hint {
+    display: flex; align-items: center; gap: 12px;
+    padding-bottom: 28px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .scroll-hint i { display: block; width: 44px; height: 1px; background: var(--rule); transform-origin: left; animation: pulse-line 2.4s ease-in-out infinite; }
+  @keyframes pulse-line { 0%,100% { transform: scaleX(.3); } 50% { transform: scaleX(1); } }
+
+  /* ───────── SEÇÕES ───────── */
+  section { position: relative; }
+  .block { padding: 104px 0; }
+  .block-head { margin-bottom: 56px; max-width: 40em; }
+  .block-head h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(32px, 4.6vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    margin-top: 16px;
+  }
+  .block-head h2 em { font-style: italic; color: var(--orange); font-weight: 400; }
+  .block-head p { margin-top: 20px; color: var(--ink-2); font-size: 18px; }
+
+  /* para quem é */
+  .signs { list-style: none; border-top: 1px solid var(--rule-soft); }
+  .signs li {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 8px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .signs .n { font-family: var(--mono); font-size: 13px; color: var(--orange); padding-top: 7px; }
+  .signs p { font-family: var(--serif); font-size: clamp(20px, 2.4vw, 26px); line-height: 1.35; }
+  .signs p span { display: block; margin-top: 8px; font-family: var(--sans); font-size: 16px; color: var(--ink-3); line-height: 1.6; }
+
+  /* ───────── ROTA ───────── */
+  .route-section { background: var(--bg-deep); border-top: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft); overflow: hidden; }
+  .route-section .grid-bg {
+    position: absolute; inset: 0; pointer-events: none; opacity: .35;
+    background-image:
+      linear-gradient(var(--rule-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: radial-gradient(ellipse at 70% 40%, #000 10%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 70% 40%, #000 10%, transparent 70%);
+  }
+  .route { position: relative; list-style: none; padding-left: 64px; }
+  .route::before {
+    content: ""; position: absolute; left: 19px; top: 8px; bottom: 8px;
+    border-left: 2px dashed rgba(236,153,73,0.28);
+  }
+  .route-progress {
+    position: absolute; left: 18px; top: 8px; width: 4px; height: 0;
+    background: var(--orange);
+    box-shadow: 0 0 18px rgba(236,153,73,0.6);
+    transition: height .15s linear;
+  }
+  .stop { position: relative; padding-bottom: 64px; }
+  .stop:last-child { padding-bottom: 0; }
+  .stop .pin {
+    position: absolute; left: -64px; top: 0;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 13px;
+    color: var(--ink-3);
+    background: var(--bg-deep);
+    border: 1px solid var(--rule-soft);
+    border-radius: 50%;
+    transition: all .5s ease;
+  }
+  .stop.on .pin { color: var(--bg-deep); background: var(--orange); border-color: var(--orange); box-shadow: 0 0 0 7px var(--orange-soft); }
+  .stop .where { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); transition: color .5s; }
+  .stop.on .where { color: var(--orange); }
+  .stop h3 { font-family: var(--serif); font-weight: 500; font-size: clamp(25px, 3vw, 34px); line-height: 1.15; margin: 8px 0 12px; }
+  .stop p { color: var(--ink-2); max-width: 34em; }
+  .stop .takeaway {
+    margin-top: 16px;
+    display: inline-block;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 8px 14px 8px 12px;
+    border-left: 2px solid var(--orange);
+    background: linear-gradient(90deg, var(--orange-soft), transparent);
+  }
+  .stop .takeaway b { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-right: 8px; }
+
+  /* ───────── BAGAGEM ───────── */
+  .split { display: grid; grid-template-columns: 1fr; gap: 56px; align-items: start; }
+  .figure { position: relative; }
+  .figure img { width: 100%; aspect-ratio: 4/5; object-fit: cover; object-position: center 30%; filter: saturate(.9) contrast(1.05); }
+  .figure::after { content: ""; position: absolute; inset: 14px -14px -14px 14px; border: 1px solid var(--rule); z-index: -1; }
+  .figure figcaption { margin-top: 26px; font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-3); }
+  .kit { list-style: none; }
+  .kit li { display: flex; gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--rule-soft); }
+  .kit li:first-child { border-top: 1px solid var(--rule-soft); }
+  .kit svg { flex: none; margin-top: 5px; color: var(--orange); }
+  .kit strong { display: block; font-family: var(--serif); font-weight: 500; font-size: 21px; line-height: 1.3; }
+  .kit span { display: block; margin-top: 4px; font-size: 16px; color: var(--ink-3); }
+
+  /* ───────── OFERTA ───────── */
+  .offer { position: relative; overflow: hidden; isolation: isolate; }
+  .offer-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+  .offer::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, var(--bg) 0%, rgba(27,19,16,0.86) 30%, rgba(27,19,16,0.9) 70%, var(--bg) 100%); }
+  .rose { position: absolute; right: -140px; top: 50%; width: 520px; height: 520px; margin-top: -260px; z-index: -1; opacity: .16; color: var(--orange); animation: spin 120s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ticket {
+    max-width: 620px;
+    background: rgba(20,14,11,0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--rule);
+    padding: 44px 32px;
+    position: relative;
+  }
+  .ticket::before, .ticket::after {
+    content: ""; position: absolute; width: 14px; height: 14px; border: 1px solid var(--orange);
+  }
+  .ticket::before { top: -8px; left: -8px; border-right: 0; border-bottom: 0; }
+  .ticket::after { bottom: -8px; right: -8px; border-left: 0; border-top: 0; }
+  .ticket h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(30px, 4vw, 42px); line-height: 1.1; margin: 14px 0 22px; }
+  .price { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 28px 0 6px; }
+  .price .cur { font-family: var(--serif); font-size: 26px; color: var(--ink-2); }
+  .price .val { font-family: var(--serif); font-weight: 500; font-size: clamp(64px, 11vw, 96px); line-height: .9; letter-spacing: -0.03em; }
+  .price-sub { font-size: 15px; color: var(--ink-3); margin-bottom: 30px; }
+  .checks { list-style: none; margin: 24px 0 8px; }
+  .checks li { position: relative; padding: 10px 0 10px 30px; color: var(--ink-2); border-bottom: 1px dotted var(--rule-soft); }
+  .checks li::before { content: ""; position: absolute; left: 2px; top: 19px; width: 12px; height: 7px; border-left: 2px solid var(--orange); border-bottom: 2px solid var(--orange); transform: rotate(-45deg); }
+  .ticket .cta { width: 100%; margin-top: 30px; }
+  .guarantee { display: flex; gap: 14px; align-items: flex-start; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--rule-soft); font-size: 15px; color: var(--ink-2); }
+  .guarantee svg { flex: none; color: var(--orange); margin-top: 2px; }
+
+  /* ───────── PERGUNTAS ───────── */
+  .faq { border-top: 1px solid var(--rule-soft); max-width: 780px; }
+  .faq details { border-bottom: 1px solid var(--rule-soft); }
+  .faq summary {
+    list-style: none; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px;
+    padding: 24px 0;
+    font-family: var(--serif); font-size: 21px; line-height: 1.35;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary i { flex: none; width: 14px; height: 14px; position: relative; }
+  .faq summary i::before, .faq summary i::after { content: ""; position: absolute; left: 0; top: 6px; width: 14px; height: 2px; background: var(--orange); transition: transform .3s; }
+  .faq summary i::after { transform: rotate(90deg); }
+  .faq details[open] summary i::after { transform: rotate(0); }
+  .faq details p { padding: 0 34px 26px 0; color: var(--ink-2); }
+
+  /* ───────── RODAPÉ ───────── */
+  .closing { text-align: left; padding: 96px 0 120px; }
+  .closing h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 5.4vw, 64px); line-height: 1.05; letter-spacing: -0.02em; max-width: 16ch; margin: 18px 0 36px; }
+  .closing h2 em { font-style: italic; color: var(--orange); font-weight: 400; }
+  footer { border-top: 1px solid var(--rule-soft); padding: 28px 0 110px; font-size: 14px; color: var(--ink-3); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between; }
+  footer a { color: var(--ink-2); text-decoration: none; }
+  footer a:hover { color: var(--orange); }
+
+  /* barra fixa no celular */
+  .sticky {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(20,14,11,0.94);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--rule);
+    transform: translateY(110%);
+    transition: transform .4s ease;
+  }
+  .sticky.show { transform: none; }
+  .sticky .p { font-family: var(--serif); font-size: 15px; line-height: 1.25; color: var(--ink-2); }
+  .sticky .p b { display: block; font-weight: 500; font-size: 22px; color: var(--ink); }
+  .sticky .cta { min-height: 48px; padding: 0 20px; font-size: 12.5px; box-shadow: none; }
+
+  .fade { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+  .fade.in { opacity: 1; transform: none; }
+
+  @media (min-width: 860px) {
+    .split { grid-template-columns: 5fr 6fr; gap: 88px; }
+    .figure { position: sticky; top: 48px; }
+    .route { padding-left: 96px; max-width: 760px; margin-left: 8%; }
+    .route::before { left: 27px; }
+    .route-progress { left: 26px; }
+    .stop .pin { left: -96px; width: 56px; height: 56px; font-size: 15px; }
+    .ticket { padding: 56px 56px; }
+    .sticky { display: none; }
+    footer { padding-bottom: 28px; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 18px; }
+    .block { padding: 80px 0; }
+    .masthead .edition { display: none; }
+    .signs li { grid-template-columns: 44px 1fr; }
+    .cta { width: 100%; }
+    .rose { width: 360px; height: 360px; margin-top: -180px; right: -180px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal, .fade { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<header class="hero">
+  <img class="hero-photo" src="mapa-fundo-login.jpg" alt="">
+  <div class="wrap masthead">
+    <div class="brand"><b>BSM Digital</b> · Mapa da Autoridade Digital</div>
+    <div class="edition">Carta nº 01</div>
+  </div>
+  <div class="wrap hero-body">
+    <div class="kicker reveal">Painel de Autoridade Digital com IA para quem quer vender mais pelas redes sociais</div>
+    <h1 class="reveal d1">Venda mais nas redes sociais com um posicionamento atrativo <em>que transforma seguidores em clientes.</em></h1>
+    <p class="lede reveal d2">Responda 5 perguntas estratégicas e saia com <strong>suas mensagens-chave, títulos e frases para a bio das suas redes sociais, apresentações para novos contatos</strong> e até 30 ideias de conteúdo. Tudo num só painel, direto do celular.</p>
+    <div class="reveal d3">
+      <a class="cta" href="https://pay.cakto.com.br/38gu88y">Quero meu mapa
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h16M11 1l5 5-5 5" stroke="currentColor" stroke-width="2"/></svg>
+      </a>
+      <p class="cta-note">Acesso imediato pelo e-mail da compra<span>·</span>Pix, cartão de crédito, PicPay, Apple Pay e Google Pay</p>
+    </div>
+  </div>
+  <div class="wrap scroll-hint reveal d4"><i></i>Role para ver a rota</div>
+</header>
+
+<!-- PARA QUEM É -->
+<section class="block">
+  <div class="wrap">
+    <div class="block-head fade">
+      <div class="kicker">Antes de partir</div>
+      <h2>O Mapa foi feito para quem <em>sabe muito</em> e ainda não consegue mostrar isso em uma frase.</h2>
+    </div>
+    <ol class="signs">
+      <li class="fade"><span class="n">01</span><p>Você trava quando alguém pergunta “o que você faz?”.<span>A resposta sai longa, técnica ou genérica, e a pessoa não entende o valor do seu trabalho.</span></p></li>
+      <li class="fade"><span class="n">02</span><p>Seu perfil não mostra o que você faz, nem quem você ajuda.<span>Título e bio que não explicam por que alguém deveria seguir, chamar ou comprar de você.</span></p></li>
+      <li class="fade"><span class="n">03</span><p>Você sabe que precisa publicar, mas não sabe o quê.<span>Cada semana começa do zero, sem uma linha que ligue um conteúdo ao outro.</span></p></li>
+      <li class="fade"><span class="n">04</span><p>Você não sabe em que ponto a sua presença digital está.<span>Falta um retrato honesto do que já funciona e do que ainda falta construir.</span></p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ROTA -->
+<section class="block route-section">
+  <div class="grid-bg"></div>
+  <div class="wrap">
+    <div class="block-head fade">
+      <div class="kicker">A rota</div>
+      <h2>Seis paradas, <em>uma direção.</em></h2>
+      <p>Cada aba do painel resolve uma parte do seu posicionamento. Você segue na ordem, e cada parada usa o que você construiu na anterior.</p>
+    </div>
+    <ol class="route" id="route">
+      <li class="route-progress" id="routeProgress" aria-hidden="true"></li>
+      <li class="stop fade">
+        <span class="pin">01</span>
+        <div class="where">Ponto de partida</div>
+        <h3>Cadastro de perfil</h3>
+        <p>Você conta quem é, sua área, seu público e onde quer chegar. É a base que a inteligência artificial usa em todas as etapas seguintes.</p>
+      </li>
+      <li class="stop fade">
+        <span class="pin">02</span>
+        <div class="where">Bússola</div>
+        <h3>Mensagens-chave</h3>
+        <p>Cinco perguntas estratégicas sobre o problema que você resolve, o resultado que seus clientes valorizam e o que só você tem. A partir das suas respostas, o painel escreve a sua base de comunicação.</p>
+        <span class="takeaway"><b>Você sai com</b>propósito, diferenciais, missão, valores e frases de impacto</span>
+      </li>
+      <li class="stop fade">
+        <span class="pin">03</span>
+        <div class="where">Leitura do terreno</div>
+        <h3>Raio-X da Autoridade</h3>
+        <p>Oito critérios de presença digital e de conteúdo viram uma pontuação de 0 a 100, com uma análise do que está forte e do que precisa de atenção.</p>
+        <span class="takeaway"><b>Você sai com</b>sua pontuação e as prioridades de ajuste</span>
+      </li>
+      <li class="stop fade">
+        <span class="pin">04</span>
+        <div class="where">Placas na estrada</div>
+        <h3>Títulos, bios e apresentações</h3>
+        <p>Gere títulos para o LinkedIn, bios para o Instagram e apresentações curtas para usar em eventos e conversas com novos contatos. Escolha a sua favorita e copie com um toque.</p>
+        <span class="takeaway"><b>Você sai com</b>até 10 gerações por rede, prontas para colar</span>
+      </li>
+      <li class="stop fade">
+        <span class="pin">05</span>
+        <div class="where">Roteiro de viagem</div>
+        <h3>Planejador de conteúdo</h3>
+        <p>Escolha entre 7 e 30 ideias de publicação alinhadas ao seu posicionamento, para uma semana ou um mês inteiro.</p>
+        <span class="takeaway"><b>Você sai com</b>até um mês de ideias organizadas</span>
+      </li>
+      <li class="stop fade">
+        <span class="pin">06</span>
+        <div class="where">Destino</div>
+        <h3>Seu Mapa Estratégico</h3>
+        <p>O painel final reúne propósito, mensagens, pontuação e escolhas numa única visão, para você consultar sempre que for escrever, gravar ou se apresentar.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- BAGAGEM -->
+<section class="block">
+  <div class="wrap split">
+    <figure class="figure fade">
+      <img src="mapa-fundo.jpg" alt="Mapa antigo iluminado por uma vela sobre a mesa de trabalho" loading="lazy">
+      <figcaption>O que você constrói fica salvo no painel do aparelho em que você usa.</figcaption>
+    </figure>
+    <div>
+      <div class="block-head fade" style="margin-bottom:36px;">
+        <div class="kicker">Na bagagem</div>
+        <h2>O que você leva <em>ao final.</em></h2>
+      </div>
+      <ul class="kit">
+        <li class="fade"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor"/><path d="M10 3.5l2 6.5-2 6.5-2-6.5z" fill="currentColor"/></svg><div><strong>Uma frase clara sobre o que você faz</strong><span>Propósito e diferenciais escritos a partir das suas próprias respostas.</span></div></li>
+        <li class="fade"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor"/><path d="M10 3.5l2 6.5-2 6.5-2-6.5z" fill="currentColor"/></svg><div><strong>Perfis que se explicam sozinhos</strong><span>Título do LinkedIn e bio do Instagram que dizem quem você ajuda e como.</span></div></li>
+        <li class="fade"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor"/><path d="M10 3.5l2 6.5-2 6.5-2-6.5z" fill="currentColor"/></svg><div><strong>Uma apresentação de 30 segundos</strong><span>Para eventos, reuniões e mensagens para novos contatos.</span></div></li>
+        <li class="fade"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor"/><path d="M10 3.5l2 6.5-2 6.5-2-6.5z" fill="currentColor"/></svg><div><strong>Um retrato da sua presença digital</strong><span>Pontuação de 0 a 100 e o que ajustar primeiro.</span></div></li>
+        <li class="fade"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="currentColor"/><path d="M10 3.5l2 6.5-2 6.5-2-6.5z" fill="currentColor"/></svg><div><strong>Um mês de ideias de conteúdo</strong><span>Até 30 ideias ligadas ao seu posicionamento, sem começar do zero toda semana.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- OFERTA -->
+<section class="block offer" id="oferta">
+  <img class="offer-photo" src="mapa-fundo.jpg" alt="" loading="lazy">
+  <svg class="rose" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <circle cx="100" cy="100" r="96" stroke="currentColor"/>
+    <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-dasharray="2 4"/>
+    <circle cx="100" cy="100" r="40" stroke="currentColor"/>
+    <path d="M100 4L112 100 100 196 88 100z" fill="currentColor" opacity=".9"/>
+    <path d="M4 100L100 88 196 100 100 112z" fill="currentColor" opacity=".55"/>
+    <path d="M32 32L104 96 168 168 96 104z" fill="currentColor" opacity=".3"/>
+    <path d="M168 32L104 104 32 168 96 96z" fill="currentColor" opacity=".3"/>
+  </svg>
+  <div class="wrap">
+    <div class="ticket fade">
+      <div class="kicker">Passagem de entrada</div>
+      <h2>Mapa da Autoridade Digital</h2>
+      <ul class="checks">
+        <li>As seis etapas do painel, do cadastro ao Mapa Estratégico</li>
+        <li>Mensagens-chave geradas a partir das suas respostas</li>
+        <li>10 gerações de títulos, 10 de bios e 10 de apresentações</li>
+        <li>Planejador com até 30 ideias de conteúdo</li>
+        <li>Funciona no celular e no computador, sem instalar nada</li>
+      </ul>
+      <div class="price"><span class="cur">R$</span><span class="val">47</span></div>
+      <div class="price-sub">Pagamento único · 12 meses de acesso</div>
+      <a class="cta" href="https://pay.cakto.com.br/38gu88y">Garantir meu acesso
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h16M11 1l5 5-5 5" stroke="currentColor" stroke-width="2"/></svg>
+      </a>
+      <div class="guarantee">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 1.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z" stroke="currentColor" stroke-width="1.5"/><path d="M7 11l3 3 5-6" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span><strong style="color:var(--ink);font-weight:600;">7 dias de garantia.</strong> Se o Mapa não fizer sentido para você, peça o reembolso pela própria Cakto dentro desse prazo.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PERGUNTAS -->
+<section class="block">
+  <div class="wrap">
+    <div class="block-head fade">
+      <div class="kicker">Perguntas frequentes</div>
+      <h2>Antes de <em>embarcar.</em></h2>
+    </div>
+    <div class="faq fade">
+      <details><summary>Como eu recebo o acesso?<i></i></summary><p>Assim que o pagamento é aprovado, você recebe o link do painel no e-mail usado na compra. Para entrar, basta digitar esse mesmo e-mail. Não precisa criar senha.</p></details>
+      <details><summary>Funciona no celular?<i></i></summary><p>Sim. O painel foi desenhado para ser usado no celular, com letras confortáveis para leitura. Também funciona no computador.</p></details>
+      <details><summary>Preciso entender de tecnologia ou de marketing?<i></i></summary><p>Não. Você responde perguntas sobre o seu trabalho, com as suas palavras, e o painel organiza e escreve a partir disso.</p></details>
+      <details><summary>O que acontece quando acabam as 10 gerações de conteúdo?<i></i></summary><p>O que você já gerou continua salvo e disponível para copiar. As 10 gerações por rede costumam ser suficientes para escolher um título, uma bio e uma apresentação definitivos.</p></details>
+      <details><summary>Serve para qualquer área?<i></i></summary><p>Serve para especialistas e mentores de qualquer área que vendem o próprio conhecimento: saúde, direito, finanças, educação, negócios, bem-estar e muitas outras.</p></details>
+      <details><summary>Quais são as formas de pagamento?<i></i></summary><p>Pix, cartão de crédito, PicPay, Apple Pay e Google Pay, pelo ambiente seguro da Cakto. Apple Pay e Google Pay aparecem nos aparelhos compatíveis.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FECHAMENTO -->
+<section class="closing">
+  <div class="wrap">
+    <hr class="rule-double" style="margin-bottom:56px;">
+    <div class="kicker fade">Última parada</div>
+    <h2 class="fade">Quem quer vender mais <em>comunica com mais clareza.</em></h2>
+    <div class="fade">
+      <a class="cta" href="https://pay.cakto.com.br/38gu88y">Quero meu mapa
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h16M11 1l5 5-5 5" stroke="currentColor" stroke-width="2"/></svg>
+      </a>
+      <p class="cta-note">R$ 47 · pagamento único<span>·</span>7 dias de garantia</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© BSM Digital · Mapa da Autoridade Digital</span>
+    <span><a href="https://www.instagram.com/bsmvitrinedigital/" target="_blank" rel="noopener">@bsmvitrinedigital</a> · <a href="/">Já comprei: entrar no painel</a></span>
+  </div>
+</footer>
+
+<div class="sticky" id="sticky">
+  <div class="p">Pagamento único<b>R$ 47</b></div>
+  <a class="cta" href="https://pay.cakto.com.br/38gu88y">Quero meu mapa</a>
+</div>
+
+<script>
+  // aparece ao rolar
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.fade').forEach(el => io.observe(el));
+
+  // a rota acende conforme a pessoa rola
+  const route = document.getElementById('route');
+  const bar = document.getElementById('routeProgress');
+  const stops = [...route.querySelectorAll('.stop')];
+  const hero = document.querySelector('.hero');
+  const sticky = document.getElementById('sticky');
+  const offer = document.getElementById('oferta');
+
+  function onScroll() {
+    const r = route.getBoundingClientRect();
+    const mark = window.innerHeight * 0.6;
+    const h = Math.max(0, Math.min(r.height - 16, mark - r.top));
+    bar.style.height = h + 'px';
+    stops.forEach(s => {
+      const top = s.getBoundingClientRect().top;
+      s.classList.toggle('on', top < mark);
+    });
+    const pastHero = hero.getBoundingClientRect().bottom < 0;
+    const o = offer.getBoundingClientRect();
+    const onOffer = o.top < window.innerHeight && o.bottom > 0;
+    sticky.classList.toggle('show', pastHero && !onOffer);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+</script>
+</body>
+</html>
