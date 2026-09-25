@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
+      "src": "/",
       "has": [{ "type": "host", "value": "mapa-autoridade-digital.bsmdigital.shop" }],
-      "destination": "/vendas.html"
+      "dest": "/vendas.html"
     }
   ]
 }
