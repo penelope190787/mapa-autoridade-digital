@@ -197,6 +197,39 @@
         .bg-gray-200 { background-color: rgba(255,255,255,0.1) !important; }
         .text-gray-600, .text-gray-700 { color: var(--text-secondary) !important; }
         .bg-brand-neutral.bg-opacity-5, .bg-brand-neutral.bg-opacity-10 { background-color: rgba(255,255,255,0.05) !important; }
+
+        /* Relatório final: estilo claro e editorial, pensado para impressão/PDF,
+           por isso separado do tema escuro do resto do painel. */
+        #relatorioConteudo .cabecalho { text-align: center; border-bottom: 3px solid #ec9949; padding-bottom: 24px; margin-bottom: 36px; }
+        #relatorioConteudo .kicker { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #866e60; }
+        #relatorioConteudo .cabecalho h1 { font-size: 32px; margin: 8px 0 4px; color: #6b342b; }
+        #relatorioConteudo .subtitulo { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 13px; color: #866e60; }
+        #relatorioConteudo h2 { font-size: 20px; color: #6b342b; border-bottom: 1px solid #e6dccf; padding-bottom: 8px; margin-top: 40px; }
+        #relatorioConteudo .campo { margin-bottom: 14px; }
+        #relatorioConteudo .campo .rotulo { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: #866e60; margin-bottom: 2px; }
+        #relatorioConteudo .campo .valor { font-size: 16px; white-space: pre-wrap; }
+        #relatorioConteudo .pontuacao { display: flex; align-items: baseline; gap: 10px; margin: 12px 0; }
+        #relatorioConteudo .pontuacao .numero { font-size: 42px; color: #ec9949; font-weight: bold; }
+        #relatorioConteudo .pontuacao .status { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 14px; color: #866e60; }
+        #relatorioConteudo ul.lista-autoridade { margin: 0; padding-left: 20px; }
+        #relatorioConteudo ul.lista-autoridade li { margin-bottom: 4px; }
+        #relatorioConteudo .ideia { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px dotted #e6dccf; }
+        #relatorioConteudo .ideia-numero { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 13px; color: #ec9949; font-weight: bold; min-width: 22px; }
+        #relatorioConteudo .ideia-tipo { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: #ab7253; padding: 2px 8px; border-radius: 4px; }
+        #relatorioConteudo .ideia-titulo { margin: 6px 0 2px; font-size: 15px; }
+        #relatorioConteudo .ideia-desc { margin: 0; font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 13px; color: #866e60; }
+        #relatorioConteudo .vazio { font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-style: italic; color: #866e60; }
+        #relatorioConteudo .rodape { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e6dccf; font-family: 'Public Sans', Arial, Helvetica, sans-serif; font-size: 12px; color: #866e60; text-align: center; }
+
+        /* Na hora de imprimir/salvar como PDF, mostra só o relatório, mesmo que
+           ele esteja "por cima" do painel escuro no momento. */
+        @media print {
+            body > img.bg-photo, body > .bg-photo-overlay,
+            #loginScreen, #mainHeader, #mainApp { display: none !important; }
+            #relatorioOverlay { position: static !important; background: #fff !important; }
+            #relatorioOverlay .no-print { display: none !important; }
+            #relatorioConteudo { max-width: none !important; padding: 0 !important; }
+        }
     </style>
 </head>
 <body>
@@ -679,12 +712,27 @@
                             <button onclick="exportToPDF()" class="bg-brand-brown text-white px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                                 📄 Gerar Relatório Final
                             </button>
-                            <p style="font-size:13px;color:var(--text-tertiary);margin-top:10px;">Abre numa nova aba, pronto para salvar como PDF, imprimir ou copiar o texto.</p>
+                            <p style="font-size:13px;color:var(--text-tertiary);margin-top:10px;">Abre aqui mesmo, pronto para salvar como PDF, imprimir ou copiar o texto.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Relatório final: aparece por cima do painel, na mesma tela (sem depender de aba nova,
+         que alguns navegadores bloqueiam por padrão). Pronto para salvar como PDF, imprimir
+         ou copiar o texto, sem sair da página. -->
+    <div id="relatorioOverlay" class="hidden" style="position:fixed;inset:0;z-index:200;overflow-y:auto;background:#fdf9f4;">
+        <div class="no-print" style="position:sticky;top:0;z-index:2;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 20px;background:#6b342b;color:#fff;font-family:'Public Sans',Arial,Helvetica,sans-serif;">
+            <span style="font-size:13px;opacity:0.85;">Seu relatório final. Use os botões para guardá-lo.</span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button id="btnFecharRelatorio" style="font-family:'Public Sans',Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.5);cursor:pointer;">Fechar</button>
+                <button id="btnCopiarRelatorio" style="font-family:'Public Sans',Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.5);cursor:pointer;">Copiar texto</button>
+                <button id="btnImprimirRelatorio" style="font-family:'Public Sans',Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;background:#ec9949;color:#2c1a0e;border:none;cursor:pointer;">Salvar como PDF / Imprimir</button>
+            </div>
+        </div>
+        <div id="relatorioConteudo" style="max-width:760px;margin:0 auto;padding:48px 32px 64px;font-family:Georgia,'Times New Roman',serif;color:#2c211c;line-height:1.6;"></div>
     </div>
 
     <script>
@@ -1398,11 +1446,11 @@
             return linhas.join('\n');
         }
 
-        // Monta a página do relatório final: um documento HTML completo, pronto para ser
-        // aberto em nova aba, salvo como PDF (pelo comando de impressão do navegador),
-        // impresso ou copiado. Fica independente do painel, então funciona mesmo se essa
-        // aba do painel for fechada depois.
-        function montarRelatorioHTML(dados, textoPlano) {
+        // Monta só o conteúdo visual do relatório final (sem <html>/<head>/toolbar), para
+        // ser encaixado dentro de #relatorioConteudo, na própria tela do painel. Assim não
+        // depende de abrir aba nova, que muitos navegadores bloqueiam por padrão (principalmente
+        // no celular), mesmo quando a pessoa clicou de verdade no botão.
+        function montarRelatorioConteudoHTML(dados) {
             const p = dados.profile, m = dados.messages, h = dados.headlines;
             const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR');
 
@@ -1426,69 +1474,7 @@
                   ).join('')
                 : '<p class="vazio">Nenhuma ideia gerada ainda.</p>';
 
-            // O texto vai num campo de texto escondido (não numa string dentro do atributo
-            // onclick), para não ter risco de aspas do conteúdo quebrarem o HTML gerado.
-            const textareaEscapado = escapeHTML(textoPlano);
-            // Tem um tempo limite de segurança: se o navegador nunca responder ao pedido de
-            // permissão da área de transferência (fica esperando sem confirmar nem recusar),
-            // o botão cai sozinho no método antigo de copiar, em vez de ficar sem reação.
-            const scriptCopiar =
-                "(function(b){" +
-                "var ta=document.getElementById('relatorio-texto-plano');" +
-                "var feito=false;" +
-                "function marcar(){if(feito)return;feito=true;var t=b.textContent;b.textContent='Copiado!';setTimeout(function(){b.textContent=t;},2000);}" +
-                "function copiarClassico(){ta.select();try{document.execCommand('copy');}catch(e){}marcar();}" +
-                "if(navigator.clipboard&&navigator.clipboard.writeText){" +
-                "navigator.clipboard.writeText(ta.value).then(marcar).catch(copiarClassico);" +
-                "setTimeout(copiarClassico,1200);" +
-                "}else{copiarClassico();}" +
-                "})(this)";
-
-            return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-                '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-                '<title>Mapa da Autoridade Digital - Relatório Final</title>' +
-                '<style>' +
-                ':root{--marrom:#6b342b;--laranja:#ec9949;--claro:#ab7253;--neutro:#866e60;--texto:#2c211c;--fundo:#fdf9f4;--linha:#e6dccf;}' +
-                '*{box-sizing:border-box;}' +
-                'body{margin:0;background:var(--fundo);color:var(--texto);font-family:Georgia,"Times New Roman",serif;line-height:1.6;}' +
-                '.toolbar{position:sticky;top:0;z-index:10;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--marrom);color:#fff;font-family:Arial,Helvetica,sans-serif;}' +
-                '.toolbar span{font-size:13px;opacity:0.85;}' +
-                '.toolbar-botoes{display:flex;gap:10px;flex-wrap:wrap;}' +
-                '.toolbar button{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;border:none;cursor:pointer;}' +
-                '.btn-primario{background:var(--laranja);color:#2c1a0e;}' +
-                '.btn-secundario{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.5) !important;}' +
-                '.folha{max-width:760px;margin:0 auto;padding:48px 32px 64px;}' +
-                '.cabecalho{text-align:center;border-bottom:3px solid var(--laranja);padding-bottom:24px;margin-bottom:36px;}' +
-                '.cabecalho .kicker{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--neutro);}' +
-                '.cabecalho h1{font-size:32px;margin:8px 0 4px;color:var(--marrom);}' +
-                '.cabecalho .subtitulo{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--neutro);}' +
-                'h2{font-size:20px;color:var(--marrom);border-bottom:1px solid var(--linha);padding-bottom:8px;margin-top:40px;}' +
-                '.campo{margin-bottom:14px;}' +
-                '.campo .rotulo{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:var(--neutro);margin-bottom:2px;}' +
-                '.campo .valor{font-size:16px;white-space:pre-wrap;}' +
-                '.pontuacao{display:flex;align-items:baseline;gap:10px;margin:12px 0;}' +
-                '.pontuacao .numero{font-size:42px;color:var(--laranja);font-weight:bold;}' +
-                '.pontuacao .status{font-family:Arial,Helvetica,sans-serif;font-size:14px;color:var(--neutro);}' +
-                'ul.lista-autoridade{margin:0;padding-left:20px;}' +
-                'ul.lista-autoridade li{margin-bottom:4px;}' +
-                '.ideia{display:flex;gap:12px;padding:14px 0;border-bottom:1px dotted var(--linha);}' +
-                '.ideia-numero{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--laranja);font-weight:bold;min-width:22px;}' +
-                '.ideia-tipo{font-family:Arial,Helvetica,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#fff;background:var(--claro);padding:2px 8px;border-radius:4px;}' +
-                '.ideia-titulo{margin:6px 0 2px;font-size:15px;}' +
-                '.ideia-desc{margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--neutro);}' +
-                '.vazio{font-family:Arial,Helvetica,sans-serif;font-style:italic;color:var(--neutro);}' +
-                '.rodape{margin-top:48px;padding-top:16px;border-top:1px solid var(--linha);font-family:Arial,Helvetica,sans-serif;font-size:12px;color:var(--neutro);text-align:center;}' +
-                '@media print{.toolbar{display:none;}.folha{padding:0;max-width:none;}body{background:#fff;}}' +
-                '@page{margin:16mm;}' +
-                '</style></head><body>' +
-                '<div class="toolbar no-print">' +
-                '<span>Este relatório fica salvo nesta aba. Use os botões para guardá-lo.</span>' +
-                '<div class="toolbar-botoes">' +
-                '<button class="btn-secundario" onclick="' + scriptCopiar.replace(/"/g, '&quot;') + '">Copiar texto</button>' +
-                '<button class="btn-primario" onclick="window.print()">Salvar como PDF / Imprimir</button>' +
-                '</div></div>' +
-                '<div class="folha">' +
-                '<div class="cabecalho">' +
+            return '<div class="cabecalho">' +
                 '<div class="kicker">BSM Digital</div>' +
                 '<h1>Mapa da Autoridade Digital</h1>' +
                 '<div class="subtitulo">Relatório final de posicionamento &middot; ' + escapeHTML(dataGeracao) + '</div>' +
@@ -1519,30 +1505,67 @@
                 '<h2>Planejador de conteúdo</h2>' +
                 ideiasConteudo +
 
-                '<div class="rodape">Gerado em ' + escapeHTML(dataGeracao) + ' &middot; Mapa da Autoridade Digital, um painel da BSM Digital</div>' +
-                '</div>' +
-                '<textarea id="relatorio-texto-plano" class="no-print" readonly aria-hidden="true" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;">' + textareaEscapado + '</textarea>' +
-                '</body></html>';
+                '<div class="rodape">Gerado em ' + escapeHTML(dataGeracao) + ' &middot; Mapa da Autoridade Digital, um painel da BSM Digital</div>';
         }
+
+        // Guarda o texto simples do relatório aberto no momento, para o botão "Copiar texto" usar.
+        let textoRelatorioAtual = '';
 
         function exportToPDF() {
             const dados = coletarDadosRelatorio();
-            const textoPlano = montarRelatorioTexto(dados);
-            const html = montarRelatorioHTML(dados, textoPlano);
+            textoRelatorioAtual = montarRelatorioTexto(dados);
+            document.getElementById('relatorioConteudo').innerHTML = montarRelatorioConteudoHTML(dados);
+            document.getElementById('relatorioOverlay').classList.remove('hidden');
+            document.getElementById('relatorioOverlay').scrollTop = 0;
+        }
 
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const novaAba = window.open(url, '_blank');
+        function fecharRelatorio() {
+            document.getElementById('relatorioOverlay').classList.add('hidden');
+        }
 
-            if (!novaAba) {
-                showNotification('O navegador bloqueou a nova aba. Permita pop-ups para este site e tente novamente.', 'warning');
-                URL.revokeObjectURL(url);
-                return;
+        function imprimirRelatorio() {
+            window.print();
+        }
+
+        // Copia o texto do relatório. Tenta a Área de Transferência moderna primeiro; se o
+        // navegador nunca responder ao pedido de permissão (fica esperando sem confirmar nem
+        // recusar), um tempo limite de segurança cai sozinho no método antigo de copiar, em
+        // vez de deixar o botão sem reação nenhuma.
+        function copiarRelatorio() {
+            const botao = document.getElementById('btnCopiarRelatorio');
+            const textoOriginal = botao.textContent;
+            let feito = false;
+
+            function marcar() {
+                if (feito) return;
+                feito = true;
+                botao.textContent = 'Copiado!';
+                setTimeout(() => { botao.textContent = textoOriginal; }, 2000);
             }
 
-            showNotification('Relatório aberto em nova aba. Use os botões lá para salvar, imprimir ou copiar.', 'success');
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            function copiarClassico() {
+                const campo = document.createElement('textarea');
+                campo.value = textoRelatorioAtual;
+                campo.style.position = 'fixed';
+                campo.style.left = '-9999px';
+                document.body.appendChild(campo);
+                campo.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(campo);
+                marcar();
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textoRelatorioAtual).then(marcar).catch(copiarClassico);
+                setTimeout(copiarClassico, 1200);
+            } else {
+                copiarClassico();
+            }
         }
+
+        document.getElementById('btnFecharRelatorio').addEventListener('click', fecharRelatorio);
+        document.getElementById('btnImprimirRelatorio').addEventListener('click', imprimirRelatorio);
+        document.getElementById('btnCopiarRelatorio').addEventListener('click', copiarRelatorio);
 
         // Utility functions
         function showNotification(message, type = 'info') {
