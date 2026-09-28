@@ -677,8 +677,9 @@
                         </div>
                         <div class="mt-8 text-center">
                             <button onclick="exportToPDF()" class="bg-brand-brown text-white px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
-                                📄 Exportar Mapa em PDF
+                                📄 Gerar Relatório Final
                             </button>
+                            <p style="font-size:13px;color:var(--text-tertiary);margin-top:10px;">Abre numa nova aba, pronto para salvar como PDF, imprimir ou copiar o texto.</p>
                         </div>
                     </div>
                 </div>
@@ -1049,7 +1050,7 @@
             ];
             
             const headlines = allHeadlines[linkedinHeadlineSet % allHeadlines.length];
-            displayHeadlines('linkedinHeadlines', headlines);
+            displayHeadlines('linkedinHeadlines', headlines, 'linkedin');
             updateGenerationCounters();
         }
         
@@ -1097,7 +1098,7 @@
             ];
             
             const bios = allBios[instagramBioSet % allBios.length];
-            displayHeadlines('instagramBios', bios);
+            displayHeadlines('instagramBios', bios, 'instagram');
             updateGenerationCounters();
         }
         
@@ -1140,7 +1141,7 @@
             ];
             
             const pitches = allPitches[networkingPitchSet % allPitches.length];
-            displayHeadlines('networkingPitches', pitches);
+            displayHeadlines('networkingPitches', pitches, 'networking');
             updateGenerationCounters();
         }
         
@@ -1150,27 +1151,40 @@
             showNotification('Novos pitches de networking gerados!', 'success');
         }
 
-        function displayHeadlines(containerId, headlines) {
+        function displayHeadlines(containerId, headlines, category) {
             const container = document.getElementById(containerId);
-            container.innerHTML = headlines.map(headline => 
-                `<div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this)">
+            container.innerHTML = headlines.map(headline =>
+                `<div class="subcard p-3" style="cursor:pointer;" onclick="selectHeadline(this, '${category}')">
                     <p class="text-sm">${headline.replace(/\n/g, '<br>')}</p>
                 </div>`
             ).join('');
         }
 
-        function selectHeadline(element) {
+        function selectHeadline(element, category) {
             const text = element.querySelector('p').textContent;
             document.getElementById('selectedText').textContent = text;
             document.getElementById('selectedHeadline').classList.remove('hidden');
-            
-            document.querySelectorAll('.bg-brand-orange').forEach(el => {
-                if (el.classList.contains('border')) {
-                    el.classList.remove('bg-brand-orange', 'text-white');
-                    el.classList.add('bg-white');
-                }
-            });
-            
+
+            // Guarda a seleção desta categoria (LinkedIn, Instagram ou Networking)
+            // para entrar no relatório final, sem apagar as escolhas das outras categorias.
+            if (category) {
+                userData.headlines = userData.headlines || {};
+                userData.headlines[category] = text;
+                localStorage.setItem('mapAutoridade', JSON.stringify(userData));
+            }
+
+            // Marca só o item escolhido dentro da mesma coluna (LinkedIn, Instagram ou Networking),
+            // sem desmarcar o que já foi escolhido nas outras colunas.
+            const container = element.parentElement;
+            if (container) {
+                container.querySelectorAll('.bg-brand-orange').forEach(el => {
+                    if (el.classList.contains('border')) {
+                        el.classList.remove('bg-brand-orange', 'text-white');
+                        el.classList.add('bg-white');
+                    }
+                });
+            }
+
             element.classList.add('bg-brand-orange', 'text-white');
             element.classList.remove('bg-white');
         }
@@ -1302,81 +1316,232 @@
         }
 
         // Export functions
-        function exportToPDF() {
-            showNotification('Gerando seu Mapa da Autoridade Digital...', 'info');
-            
-            const pdfContent = generatePDFContent();
-            
-            const blob = new Blob([pdfContent], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Mapa_Autoridade_Digital_${userData.profile.name || 'Usuario'}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            showNotification('Mapa exportado com sucesso! Arquivo baixado.', 'success');
+        // Reúne, na hora, todos os dados que a pessoa já preencheu ou gerou no painel
+        // (perfil, mensagens-chave, raio-x, títulos/bios selecionados e ideias de conteúdo).
+        function coletarDadosRelatorio() {
+            const checkedItems = [];
+            document.querySelectorAll('.authority-check:checked').forEach(checkbox => {
+                const label = checkbox.closest('label');
+                const spans = label ? label.querySelectorAll('span') : [];
+                if (spans.length) checkedItems.push(spans[0].textContent.trim());
+            });
+
+            return {
+                profile: userData.profile || {},
+                messages: userData.messages || {},
+                authority: userData.authority || 0,
+                checkedItems: checkedItems,
+                headlines: userData.headlines || {},
+                content: userData.content || []
+            };
         }
-        
-        function generatePDFContent() {
-            const profile = userData.profile || {};
-            const messages = userData.messages || {};
-            const authority = userData.authority || 0;
-            const contentCount = userData.content?.length || 0;
-            
-            return `
-═══════════════════════════════════════════════════════════════
-                    MAPA DA AUTORIDADE DIGITAL
-═══════════════════════════════════════════════════════════════
 
-📋 PERFIL PROFISSIONAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Nome: ${profile.name || 'Não informado'}
-Empresa: ${profile.company || 'Não informado'}
-Setor: ${profile.sector || 'Não informado'}
-Público-Alvo: ${profile.target || 'Não informado'}
+        function textoOuPadrao(valor, padrao) {
+            return (valor && String(valor).trim() !== '') ? valor : padrao;
+        }
 
-💬 MENSAGENS-CHAVE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 PROPÓSITO CENTRAL:
-${messages.purpose || 'Não definido'}
+        function escapeHTML(texto) {
+            const div = document.createElement('div');
+            div.textContent = texto == null ? '' : String(texto);
+            return div.innerHTML;
+        }
 
-🌟 PRINCIPAIS DIFERENCIAIS:
-${messages.differentials || 'Não definido'}
+        // Monta a versão em texto simples do relatório, usada pelo botão "Copiar texto"
+        // e para quem preferir colar o conteúdo em outro lugar (documento, e-mail, etc.).
+        function montarRelatorioTexto(dados) {
+            const p = dados.profile, m = dados.messages, h = dados.headlines;
+            const linhas = [];
 
-🚀 MISSÃO:
-${messages.mission || 'Não definido'}
+            linhas.push('MAPA DA AUTORIDADE DIGITAL');
+            linhas.push('Relatório final de posicionamento');
+            linhas.push('');
+            linhas.push('PERFIL PROFISSIONAL');
+            linhas.push('Nome: ' + textoOuPadrao(p.name, 'Não informado'));
+            linhas.push('Empresa: ' + textoOuPadrao(p.company, 'Não informado'));
+            linhas.push('Setor: ' + textoOuPadrao(p.sector, 'Não informado'));
+            linhas.push('Público-alvo: ' + textoOuPadrao(p.target, 'Não informado'));
+            linhas.push('');
+            linhas.push('MENSAGENS-CHAVE');
+            linhas.push('Propósito central: ' + textoOuPadrao(m.purpose, 'Ainda não definido'));
+            linhas.push('Principais diferenciais: ' + textoOuPadrao(m.differentials, 'Ainda não definido'));
+            linhas.push('Missão: ' + textoOuPadrao(m.mission, 'Ainda não definida'));
+            linhas.push('Valores: ' + textoOuPadrao(m.values, 'Ainda não definidos'));
+            linhas.push('Frases de impacto: ' + textoOuPadrao(m.impactPhrases, 'Ainda não definidas'));
+            linhas.push('');
+            linhas.push('RAIO-X DA AUTORIDADE DIGITAL');
+            linhas.push('Pontuação: ' + dados.authority + '/100');
+            if (dados.checkedItems.length) {
+                linhas.push('Pontos já marcados:');
+                dados.checkedItems.forEach(item => linhas.push('- ' + item));
+            } else {
+                linhas.push('Nenhum item marcado ainda.');
+            }
+            linhas.push('');
+            linhas.push('TÍTULOS, BIOS E APRESENTAÇÕES ESCOLHIDOS');
+            linhas.push('Título para o LinkedIn: ' + textoOuPadrao(h.linkedin, 'Ainda não escolhido'));
+            linhas.push('Bio para o Instagram: ' + textoOuPadrao(h.instagram, 'Ainda não escolhida'));
+            linhas.push('Apresentação para novos contatos: ' + textoOuPadrao(h.networking, 'Ainda não escolhida'));
+            linhas.push('');
+            linhas.push('PLANEJADOR DE CONTEÚDO');
+            if (dados.content.length) {
+                dados.content.forEach((idea, i) => {
+                    linhas.push((i + 1) + '. [' + idea.type + '] ' + idea.title);
+                    if (idea.description) linhas.push('   ' + idea.description);
+                });
+            } else {
+                linhas.push('Nenhuma ideia gerada ainda.');
+            }
+            linhas.push('');
+            linhas.push('Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR'));
+            linhas.push('Mapa da Autoridade Digital');
 
-💎 VALORES:
-${messages.values || 'Não definido'}
+            return linhas.join('\n');
+        }
 
-⚡ FRASES DE IMPACTO:
-${messages.impactPhrases || 'Não definido'}
+        // Monta a página do relatório final: um documento HTML completo, pronto para ser
+        // aberto em nova aba, salvo como PDF (pelo comando de impressão do navegador),
+        // impresso ou copiado. Fica independente do painel, então funciona mesmo se essa
+        // aba do painel for fechada depois.
+        function montarRelatorioHTML(dados, textoPlano) {
+            const p = dados.profile, m = dados.messages, h = dados.headlines;
+            const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR');
 
-📊 ANÁLISE DE AUTORIDADE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Pontuação Atual: ${authority}/100 pontos
+            const statusAutoridade =
+                dados.authority >= 80 ? 'Excelente. Autoridade digital muito forte.' :
+                dados.authority >= 60 ? 'Boa autoridade digital, com espaço para evoluir.' :
+                dados.authority >= 40 ? 'Autoridade em desenvolvimento.' :
+                'Fase inicial, com bastante espaço para crescer.';
 
-Status da Autoridade:
-${authority >= 80 ? '🟢 EXCELENTE - Autoridade digital muito forte' :
-  authority >= 60 ? '🟡 BOA - Autoridade em bom nível' :
-  authority >= 40 ? '🟠 DESENVOLVIMENTO - Autoridade em crescimento' :
-  '🔴 INICIAL - Muito espaço para crescimento'}
+            const itensAutoridade = dados.checkedItems.length
+                ? dados.checkedItems.map(item => '<li>' + escapeHTML(item) + '</li>').join('')
+                : '<li class="vazio">Nenhum item marcado ainda.</li>';
 
-📈 ESTATÍSTICAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Perfil Completo: ${Math.round((Object.values(profile).filter(v => v && v.trim() !== '').length / 4) * 100)}%
-• Pontuação de Autoridade: ${authority} pontos
-• Ideias de Conteúdo Geradas: ${contentCount}
+            const ideiasConteudo = dados.content.length
+                ? dados.content.map((idea, i) =>
+                    '<div class="ideia"><span class="ideia-numero">' + (i + 1) + '</span>' +
+                    '<div><span class="ideia-tipo">' + escapeHTML(idea.type) + '</span>' +
+                    '<p class="ideia-titulo">' + escapeHTML(idea.title) + '</p>' +
+                    (idea.description ? '<p class="ideia-desc">' + escapeHTML(idea.description) + '</p>' : '') +
+                    '</div></div>'
+                  ).join('')
+                : '<p class="vazio">Nenhuma ideia gerada ainda.</p>';
 
-═══════════════════════════════════════════════════════════════
-Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
-Ferramenta: Mapa da Autoridade Digital
-═══════════════════════════════════════════════════════════════
-            `.trim();
+            // O texto vai num campo de texto escondido (não numa string dentro do atributo
+            // onclick), para não ter risco de aspas do conteúdo quebrarem o HTML gerado.
+            const textareaEscapado = escapeHTML(textoPlano);
+            // Tem um tempo limite de segurança: se o navegador nunca responder ao pedido de
+            // permissão da área de transferência (fica esperando sem confirmar nem recusar),
+            // o botão cai sozinho no método antigo de copiar, em vez de ficar sem reação.
+            const scriptCopiar =
+                "(function(b){" +
+                "var ta=document.getElementById('relatorio-texto-plano');" +
+                "var feito=false;" +
+                "function marcar(){if(feito)return;feito=true;var t=b.textContent;b.textContent='Copiado!';setTimeout(function(){b.textContent=t;},2000);}" +
+                "function copiarClassico(){ta.select();try{document.execCommand('copy');}catch(e){}marcar();}" +
+                "if(navigator.clipboard&&navigator.clipboard.writeText){" +
+                "navigator.clipboard.writeText(ta.value).then(marcar).catch(copiarClassico);" +
+                "setTimeout(copiarClassico,1200);" +
+                "}else{copiarClassico();}" +
+                "})(this)";
+
+            return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+                '<title>Mapa da Autoridade Digital - Relatório Final</title>' +
+                '<style>' +
+                ':root{--marrom:#6b342b;--laranja:#ec9949;--claro:#ab7253;--neutro:#866e60;--texto:#2c211c;--fundo:#fdf9f4;--linha:#e6dccf;}' +
+                '*{box-sizing:border-box;}' +
+                'body{margin:0;background:var(--fundo);color:var(--texto);font-family:Georgia,"Times New Roman",serif;line-height:1.6;}' +
+                '.toolbar{position:sticky;top:0;z-index:10;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--marrom);color:#fff;font-family:Arial,Helvetica,sans-serif;}' +
+                '.toolbar span{font-size:13px;opacity:0.85;}' +
+                '.toolbar-botoes{display:flex;gap:10px;flex-wrap:wrap;}' +
+                '.toolbar button{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:6px;border:none;cursor:pointer;}' +
+                '.btn-primario{background:var(--laranja);color:#2c1a0e;}' +
+                '.btn-secundario{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.5) !important;}' +
+                '.folha{max-width:760px;margin:0 auto;padding:48px 32px 64px;}' +
+                '.cabecalho{text-align:center;border-bottom:3px solid var(--laranja);padding-bottom:24px;margin-bottom:36px;}' +
+                '.cabecalho .kicker{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--neutro);}' +
+                '.cabecalho h1{font-size:32px;margin:8px 0 4px;color:var(--marrom);}' +
+                '.cabecalho .subtitulo{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--neutro);}' +
+                'h2{font-size:20px;color:var(--marrom);border-bottom:1px solid var(--linha);padding-bottom:8px;margin-top:40px;}' +
+                '.campo{margin-bottom:14px;}' +
+                '.campo .rotulo{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:var(--neutro);margin-bottom:2px;}' +
+                '.campo .valor{font-size:16px;white-space:pre-wrap;}' +
+                '.pontuacao{display:flex;align-items:baseline;gap:10px;margin:12px 0;}' +
+                '.pontuacao .numero{font-size:42px;color:var(--laranja);font-weight:bold;}' +
+                '.pontuacao .status{font-family:Arial,Helvetica,sans-serif;font-size:14px;color:var(--neutro);}' +
+                'ul.lista-autoridade{margin:0;padding-left:20px;}' +
+                'ul.lista-autoridade li{margin-bottom:4px;}' +
+                '.ideia{display:flex;gap:12px;padding:14px 0;border-bottom:1px dotted var(--linha);}' +
+                '.ideia-numero{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--laranja);font-weight:bold;min-width:22px;}' +
+                '.ideia-tipo{font-family:Arial,Helvetica,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:#fff;background:var(--claro);padding:2px 8px;border-radius:4px;}' +
+                '.ideia-titulo{margin:6px 0 2px;font-size:15px;}' +
+                '.ideia-desc{margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--neutro);}' +
+                '.vazio{font-family:Arial,Helvetica,sans-serif;font-style:italic;color:var(--neutro);}' +
+                '.rodape{margin-top:48px;padding-top:16px;border-top:1px solid var(--linha);font-family:Arial,Helvetica,sans-serif;font-size:12px;color:var(--neutro);text-align:center;}' +
+                '@media print{.toolbar{display:none;}.folha{padding:0;max-width:none;}body{background:#fff;}}' +
+                '@page{margin:16mm;}' +
+                '</style></head><body>' +
+                '<div class="toolbar no-print">' +
+                '<span>Este relatório fica salvo nesta aba. Use os botões para guardá-lo.</span>' +
+                '<div class="toolbar-botoes">' +
+                '<button class="btn-secundario" onclick="' + scriptCopiar.replace(/"/g, '&quot;') + '">Copiar texto</button>' +
+                '<button class="btn-primario" onclick="window.print()">Salvar como PDF / Imprimir</button>' +
+                '</div></div>' +
+                '<div class="folha">' +
+                '<div class="cabecalho">' +
+                '<div class="kicker">BSM Digital</div>' +
+                '<h1>Mapa da Autoridade Digital</h1>' +
+                '<div class="subtitulo">Relatório final de posicionamento &middot; ' + escapeHTML(dataGeracao) + '</div>' +
+                '</div>' +
+
+                '<h2>Perfil profissional</h2>' +
+                '<div class="campo"><div class="rotulo">Nome</div><div class="valor">' + escapeHTML(textoOuPadrao(p.name, 'Não informado')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Empresa</div><div class="valor">' + escapeHTML(textoOuPadrao(p.company, 'Não informado')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Setor</div><div class="valor">' + escapeHTML(textoOuPadrao(p.sector, 'Não informado')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Público-alvo</div><div class="valor">' + escapeHTML(textoOuPadrao(p.target, 'Não informado')) + '</div></div>' +
+
+                '<h2>Mensagens-chave</h2>' +
+                '<div class="campo"><div class="rotulo">Propósito central</div><div class="valor">' + escapeHTML(textoOuPadrao(m.purpose, 'Ainda não definido')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Principais diferenciais</div><div class="valor">' + escapeHTML(textoOuPadrao(m.differentials, 'Ainda não definido')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Missão</div><div class="valor">' + escapeHTML(textoOuPadrao(m.mission, 'Ainda não definida')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Valores</div><div class="valor">' + escapeHTML(textoOuPadrao(m.values, 'Ainda não definidos')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Frases de impacto</div><div class="valor">' + escapeHTML(textoOuPadrao(m.impactPhrases, 'Ainda não definidas')) + '</div></div>' +
+
+                '<h2>Raio-X da autoridade digital</h2>' +
+                '<div class="pontuacao"><span class="numero">' + dados.authority + '/100</span><span class="status">' + escapeHTML(statusAutoridade) + '</span></div>' +
+                '<ul class="lista-autoridade">' + itensAutoridade + '</ul>' +
+
+                '<h2>Títulos, bios e apresentações escolhidos</h2>' +
+                '<div class="campo"><div class="rotulo">Título para o LinkedIn</div><div class="valor">' + escapeHTML(textoOuPadrao(h.linkedin, 'Ainda não escolhido')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Bio para o Instagram</div><div class="valor">' + escapeHTML(textoOuPadrao(h.instagram, 'Ainda não escolhida')) + '</div></div>' +
+                '<div class="campo"><div class="rotulo">Apresentação para novos contatos</div><div class="valor">' + escapeHTML(textoOuPadrao(h.networking, 'Ainda não escolhida')) + '</div></div>' +
+
+                '<h2>Planejador de conteúdo</h2>' +
+                ideiasConteudo +
+
+                '<div class="rodape">Gerado em ' + escapeHTML(dataGeracao) + ' &middot; Mapa da Autoridade Digital, um painel da BSM Digital</div>' +
+                '</div>' +
+                '<textarea id="relatorio-texto-plano" class="no-print" readonly aria-hidden="true" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;">' + textareaEscapado + '</textarea>' +
+                '</body></html>';
+        }
+
+        function exportToPDF() {
+            const dados = coletarDadosRelatorio();
+            const textoPlano = montarRelatorioTexto(dados);
+            const html = montarRelatorioHTML(dados, textoPlano);
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const novaAba = window.open(url, '_blank');
+
+            if (!novaAba) {
+                showNotification('O navegador bloqueou a nova aba. Permita pop-ups para este site e tente novamente.', 'warning');
+                URL.revokeObjectURL(url);
+                return;
+            }
+
+            showNotification('Relatório aberto em nova aba. Use os botões lá para salvar, imprimir ou copiar.', 'success');
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
 
         // Utility functions
