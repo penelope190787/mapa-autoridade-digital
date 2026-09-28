@@ -533,6 +533,7 @@
                 <div class="max-w-6xl mx-auto px-4">
                     <div class="card p-6 md:p-8 card-shadow">
                         <h2 class="section-title">Gerador de Headlines e Bios</h2>
+                        <p id="avisoLimiteHeadlines" class="hidden" style="font-size:13px;color:var(--text-tertiary);margin-top:-8px;margin-bottom:16px;"></p>
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="subcard p-6">
                                 <h3 class="font-semibold text-brand-brown mb-4 flex items-center">
@@ -555,7 +556,7 @@
                                     </button>
                                 </div>
                                 <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
-                                    <span id="linkedinCount">0</span>/10 gerações
+                                    <span id="linkedinCount">0</span>/<span id="linkedinLimit">10</span> gerações
                                 </div>
                             </div>
                             <div class="subcard p-6">
@@ -579,7 +580,7 @@
                                     </button>
                                 </div>
                                 <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
-                                    <span id="instagramCount">0</span>/10 gerações
+                                    <span id="instagramCount">0</span>/<span id="instagramLimit">10</span> gerações
                                 </div>
                             </div>
                             <div class="subcard p-6">
@@ -603,7 +604,7 @@
                                     </button>
                                 </div>
                                 <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;text-align:center;">
-                                    <span id="networkingCount">0</span>/10 gerações
+                                    <span id="networkingCount">0</span>/<span id="networkingLimit">10</span> gerações
                                 </div>
                             </div>
                         </div>
@@ -625,14 +626,15 @@
                 <div class="max-w-6xl mx-auto px-4">
                     <div class="card p-6 md:p-8 card-shadow">
                         <h2 class="section-title">Planner de Conteúdo</h2>
+                        <p id="avisoLimiteIdeias" class="hidden" style="font-size:13px;color:var(--text-tertiary);margin-top:-8px;margin-bottom:16px;"></p>
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <label class="field-label">Quantidade de ideias</label>
                                 <select id="contentAmount" class="field-input" style="width:auto;display:inline-block;">
                                     <option value="7">7 ideias (1 semana)</option>
-                                    <option value="14">14 ideias (2 semanas)</option>
-                                    <option value="21">21 ideias (3 semanas)</option>
-                                    <option value="30">30 ideias (1 mês)</option>
+                                    <option value="14" class="trial-locked-option" disabled>14 ideias (2 semanas)</option>
+                                    <option value="21" class="trial-locked-option" disabled>21 ideias (3 semanas)</option>
+                                    <option value="30" class="trial-locked-option" disabled>30 ideias (1 mês)</option>
                                     <option value="60" class="unlimited-option" disabled>60 ideias (2 meses) - Ilimitado</option>
                                     <option value="90" class="unlimited-option" disabled>90 ideias (3 meses) - Ilimitado</option>
                                     <option value="180" class="unlimited-option" disabled>180 ideias (6 meses) - Ilimitado</option>
@@ -754,6 +756,11 @@
             networking: 0
         };
         const BASIC_LIMIT = 10;
+        // Nos primeiros 7 dias (antes de liberadoCompleto), o limite de geração cai para
+        // apertar a trava anti-fraude de reembolso: evita que a pessoa gere o conteúdo
+        // todo dentro da garantia e peça reembolso em seguida.
+        const TRIAL_LIMIT = 1; // limite por categoria de headline/bio/pitch durante os 7 primeiros dias
+        const TRIAL_CONTENT_LIMIT = 7; // limite de ideias no planner durante os 7 primeiros dias
         let isUnlimited = false;
         let hasBasicAccess = true;
 
@@ -785,6 +792,18 @@
             return `em ${diasRestantesLiberacao} dias`;
         }
 
+        // Limite de geração de headline/bio/pitch que vale AGORA para quem ainda não tem
+        // geração realmente ilimitada: aperta para TRIAL_LIMIT enquanto os 7 dias de
+        // garantia não passaram, e volta ao limite básico de sempre depois disso.
+        function limiteGeracaoAtual() {
+            return liberadoCompleto ? BASIC_LIMIT : TRIAL_LIMIT;
+        }
+
+        // Mesma lógica acima, mas para a quantidade de ideias do Planner de Conteúdo.
+        function limiteIdeiasAtual() {
+            return liberadoCompleto ? 30 : TRIAL_CONTENT_LIMIT;
+        }
+
         // Facebook Pixel Events
         function trackPixelEvent(eventName, parameters = {}) {
             if (typeof fbq !== 'undefined') {
@@ -799,6 +818,13 @@
                     option.disabled = false;
                     option.textContent = option.textContent.replace(' - Ilimitado', '');
                 }
+            });
+
+            // Opções de 14/21/30 ideias ficam travadas durante os 7 primeiros dias (a pessoa
+            // só pode escolher 7 ideias nesse período) e voltam a ficar disponíveis assim que
+            // liberadoCompleto virar true, sem depender de assinatura.
+            document.querySelectorAll('.trial-locked-option').forEach(option => {
+                option.disabled = !liberadoCompleto;
             });
         }
         
@@ -830,6 +856,13 @@
                 document.getElementById('linkedinCount').textContent = generationCounts.linkedin;
                 document.getElementById('instagramCount').textContent = generationCounts.instagram;
                 document.getElementById('networkingCount').textContent = generationCounts.networking;
+
+                // O "/10" ao lado do contador precisa refletir o limite real do momento:
+                // "/1" durante os 7 primeiros dias, "/10" depois disso.
+                const limiteAtual = limiteGeracaoAtual();
+                document.getElementById('linkedinLimit').textContent = limiteAtual;
+                document.getElementById('instagramLimit').textContent = limiteAtual;
+                document.getElementById('networkingLimit').textContent = limiteAtual;
             }
         }
 
@@ -1086,7 +1119,7 @@
         let networkingPitchSet = 0;
         
         function generateLinkedInHeadlines() {
-            if (!podeGerarIlimitado() && generationCounts.linkedin >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.linkedin >= limiteGeracaoAtual()) {
                 showUpgradeModal('linkedin');
                 return;
             }
@@ -1142,7 +1175,7 @@
         }
 
         function generateInstagramBios() {
-            if (!podeGerarIlimitado() && generationCounts.instagram >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.instagram >= limiteGeracaoAtual()) {
                 showUpgradeModal('instagram');
                 return;
             }
@@ -1190,7 +1223,7 @@
         }
 
         function generateNetworkingPitches() {
-            if (!podeGerarIlimitado() && generationCounts.networking >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.networking >= limiteGeracaoAtual()) {
                 showUpgradeModal('networking');
                 return;
             }
@@ -1289,7 +1322,7 @@
         function generateContentIdeas() {
             const amount = parseInt(document.getElementById('contentAmount').value);
 
-            if (!podeGerarIlimitado() && amount > 30) {
+            if (!podeGerarIlimitado() && amount > limiteIdeiasAtual()) {
                 showUpgradeModal('planner');
                 return;
             }
@@ -1600,6 +1633,36 @@
             }
         }
 
+        // Mostra, junto do Gerador de Headlines e Bios e do Planner de Conteúdo, o limite
+        // apertado dos 7 primeiros dias e quando ele libera: assim a pessoa já sabe do
+        // limite antes de esbarrar nele, em vez de só descobrir depois de tentar gerar.
+        // Fica sincronizado com o mesmo momento em que atualizarAvisoRelatorio() atualiza
+        // o aviso do Relatório Final, porque os dois dependem do mesmo liberadoCompleto
+        // vindo de verify.js.
+        function atualizarAvisosLimiteTrial() {
+            const avisoHeadlines = document.getElementById('avisoLimiteHeadlines');
+            if (avisoHeadlines) {
+                if (liberadoCompleto) {
+                    avisoHeadlines.classList.add('hidden');
+                    avisoHeadlines.textContent = '';
+                } else {
+                    avisoHeadlines.classList.remove('hidden');
+                    avisoHeadlines.textContent = `Nos primeiros 7 dias você tem ${TRIAL_LIMIT} geração por categoria. Libera ${BASIC_LIMIT} por categoria ${descricaoPrazoLiberacao()}.`;
+                }
+            }
+
+            const avisoIdeias = document.getElementById('avisoLimiteIdeias');
+            if (avisoIdeias) {
+                if (liberadoCompleto) {
+                    avisoIdeias.classList.add('hidden');
+                    avisoIdeias.textContent = '';
+                } else {
+                    avisoIdeias.classList.remove('hidden');
+                    avisoIdeias.textContent = `Nos primeiros 7 dias você tem até ${TRIAL_CONTENT_LIMIT} ideias. Libera 30 ideias ${descricaoPrazoLiberacao()}.`;
+                }
+            }
+        }
+
         function fecharRelatorio() {
             document.getElementById('relatorioOverlay').classList.add('hidden');
         }
@@ -1710,13 +1773,21 @@
             // ilimitado, então "Upgrade para continuar" soaria como cobrança em dobro.
             const aguardandoLiberacaoDaAssinatura = isUnlimited && !liberadoCompleto;
 
+            // As mensagens usam limiteGeracaoAtual()/limiteIdeiasAtual() em vez de BASIC_LIMIT/30
+            // fixos porque, durante os 7 primeiros dias, o limite real é o apertado (trial),
+            // não o de sempre: mostrar "10"/"30" nessa fase enganaria a pessoa sobre onde ela
+            // realmente está travada.
             let message = '';
             if (aguardandoLiberacaoDaAssinatura) {
-                message = `A geração realmente ilimitada da sua assinatura libera ${descricaoPrazoLiberacao()}, junto com o fim do prazo de garantia de 7 dias. Até lá, o limite é o mesmo do Plano Básico: ${BASIC_LIMIT} gerações por categoria e 30 ideias no planejador.`;
+                message = `A geração realmente ilimitada da sua assinatura libera ${descricaoPrazoLiberacao()}, junto com o fim do prazo de garantia de 7 dias. Até lá, o limite é ${limiteGeracaoAtual()} geração por categoria e ${limiteIdeiasAtual()} ideias no planner.`;
             } else if (feature === 'planner') {
-                message = 'Para gerar planner acima de 30 dias, você precisa do Plano Ilimitado!';
+                message = liberadoCompleto
+                    ? 'Para gerar planner acima de 30 dias, você precisa do Plano Ilimitado!'
+                    : `Nos primeiros 7 dias, o planner fica limitado a ${limiteIdeiasAtual()} ideias. Libera 30 ideias ${descricaoPrazoLiberacao()}, ou assine o Plano Ilimitado para gerar até 365 dias de uma vez.`;
             } else {
-                message = `Você atingiu o limite de ${BASIC_LIMIT} gerações. Upgrade para continuar!`;
+                message = liberadoCompleto
+                    ? `Você atingiu o limite de ${BASIC_LIMIT} gerações. Upgrade para continuar!`
+                    : `Você atingiu o limite de ${limiteGeracaoAtual()} geração por categoria dos primeiros 7 dias. Libera ${BASIC_LIMIT} por categoria ${descricaoPrazoLiberacao()}, ou assine o Plano Ilimitado.`;
             }
 
             const beneficios = aguardandoLiberacaoDaAssinatura ? '' : `
@@ -1816,6 +1887,7 @@
             updateAccessFeatures();
             updateGenerationCounters();
             atualizarAvisoRelatorio();
+            atualizarAvisosLimiteTrial();
             showMainApp(email);
         }
 
