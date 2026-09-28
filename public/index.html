@@ -713,6 +713,7 @@
                                 📄 Gerar Relatório Final
                             </button>
                             <p style="font-size:13px;color:var(--text-tertiary);margin-top:10px;">Abre aqui mesmo, pronto para salvar como PDF, imprimir ou copiar o texto.</p>
+                            <p id="avisoLiberacaoRelatorio" class="hidden" style="font-size:13px;color:var(--text-secondary);margin-top:6px;"></p>
                         </div>
                     </div>
                 </div>
@@ -756,6 +757,34 @@
         let isUnlimited = false;
         let hasBasicAccess = true;
 
+        // Trava anti-fraude de reembolso: enquanto os 7 dias de garantia da Cakto não
+        // tiverem passado (calculado no servidor, dentro de verify.js, nunca no navegador,
+        // que pode ter o relógio adiantado), ninguém tem geração realmente ilimitada nem
+        // acesso ao Relatório Final, mesmo quem já é assinante. Estas variáveis vêm da
+        // resposta de verify.js, preenchidas no mesmo lugar onde `isUnlimited` é preenchido.
+        let liberadoCompleto = false;
+        let diasRestantesLiberacao = 7;
+
+        // Só libera geração acima do limite básico quando os dois forem verdadeiros:
+        // a pessoa tem assinatura (isUnlimited) E já passaram os 7 dias de garantia
+        // (liberadoCompleto). Assinante ainda dentro da garantia continua no limite
+        // básico de 10 gerações por categoria e 30 ideias, igual ao Plano Básico.
+        function podeGerarIlimitado() {
+            return isUnlimited && liberadoCompleto;
+        }
+
+        // Descreve em texto corrido quando o Relatório Final / a geração ilimitada libera,
+        // ajustando o singular para "hoje"/"amanhã" em vez de soar estranho ("em 1 dias").
+        function descricaoPrazoLiberacao() {
+            if (diasRestantesLiberacao <= 0) {
+                return 'hoje';
+            }
+            if (diasRestantesLiberacao === 1) {
+                return 'amanhã';
+            }
+            return `em ${diasRestantesLiberacao} dias`;
+        }
+
         // Facebook Pixel Events
         function trackPixelEvent(eventName, parameters = {}) {
             if (typeof fbq !== 'undefined') {
@@ -766,7 +795,7 @@
         function updateAccessFeatures() {
             const unlimitedOptions = document.querySelectorAll('.unlimited-option');
             unlimitedOptions.forEach(option => {
-                if (isUnlimited) {
+                if (podeGerarIlimitado()) {
                     option.disabled = false;
                     option.textContent = option.textContent.replace(' - Ilimitado', '');
                 }
@@ -782,7 +811,11 @@
         }
         
         function updateGenerationCounters() {
-            if (isUnlimited) {
+            // Usa podeGerarIlimitado() (não só isUnlimited) para que o contador mostrado
+            // condiza com o que de fato acontece ao clicar em gerar: mostrar "∞" para quem
+            // ainda está no período de garantia enganaria a pessoa, já que a geração acima
+            // de 10 continua bloqueada até o 8º dia mesmo para assinantes.
+            if (podeGerarIlimitado()) {
                 document.getElementById('linkedinCount').textContent = '∞';
                 document.getElementById('instagramCount').textContent = '∞';
                 document.getElementById('networkingCount').textContent = '∞';
@@ -1053,7 +1086,7 @@
         let networkingPitchSet = 0;
         
         function generateLinkedInHeadlines() {
-            if (!isUnlimited && generationCounts.linkedin >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.linkedin >= BASIC_LIMIT) {
                 showUpgradeModal('linkedin');
                 return;
             }
@@ -1109,7 +1142,7 @@
         }
 
         function generateInstagramBios() {
-            if (!isUnlimited && generationCounts.instagram >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.instagram >= BASIC_LIMIT) {
                 showUpgradeModal('instagram');
                 return;
             }
@@ -1157,7 +1190,7 @@
         }
 
         function generateNetworkingPitches() {
-            if (!isUnlimited && generationCounts.networking >= BASIC_LIMIT) {
+            if (!podeGerarIlimitado() && generationCounts.networking >= BASIC_LIMIT) {
                 showUpgradeModal('networking');
                 return;
             }
@@ -1255,8 +1288,8 @@
         // Content planner functions
         function generateContentIdeas() {
             const amount = parseInt(document.getElementById('contentAmount').value);
-            
-            if (!isUnlimited && amount > 30) {
+
+            if (!podeGerarIlimitado() && amount > 30) {
                 showUpgradeModal('planner');
                 return;
             }
@@ -1512,11 +1545,59 @@
         let textoRelatorioAtual = '';
 
         function exportToPDF() {
+            // Trava anti-fraude de reembolso: o Relatório Final só abre depois que os 7 dias
+            // de garantia da Cakto passarem para ESTA compra (checado no servidor em
+            // verify.js). Antes disso, mostramos uma explicação de prazo em vez do relatório.
+            if (!liberadoCompleto) {
+                mostrarAvisoRelatorioBloqueado();
+                return;
+            }
+
             const dados = coletarDadosRelatorio();
             textoRelatorioAtual = montarRelatorioTexto(dados);
             document.getElementById('relatorioConteudo').innerHTML = montarRelatorioConteudoHTML(dados);
             document.getElementById('relatorioOverlay').classList.remove('hidden');
             document.getElementById('relatorioOverlay').scrollTop = 0;
+        }
+
+        // Explica o prazo de liberação do Relatório Final como um aviso amigável, não como
+        // um erro: a pessoa comprou e pode continuar usando o resto do painel normalmente
+        // (Perfil, Mensagens-Chave, Raio-X e Headlines/Bios) enquanto aguarda o fim da
+        // garantia de 7 dias. Reaproveita o mesmo estilo visual dos outros modais do app.
+        function mostrarAvisoRelatorioBloqueado() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-8 max-w-md w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📄</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-brand-brown mb-4">Relatório Final libera ${descricaoPrazoLiberacao()}</h3>
+                        <p class="text-gray-600 mb-6">Seu Relatório Final libera ${descricaoPrazoLiberacao()}, junto com o fim do prazo de garantia. Enquanto isso, continue explorando as outras abas: Perfil, Mensagens-Chave, Raio-X e Headlines/Bios já estão liberados.</p>
+                        <button onclick="this.closest('.fixed').remove()" class="w-full bg-brand-orange text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">Entendi</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
+        // Mostra, logo abaixo do botão "Gerar Relatório Final" no Dashboard, quantos dias
+        // faltam para a liberação: assim a pessoa já vê o prazo antes de tentar gerar,
+        // em vez de só descobrir o bloqueio depois de clicar.
+        function atualizarAvisoRelatorio() {
+            const aviso = document.getElementById('avisoLiberacaoRelatorio');
+            if (!aviso) return;
+
+            if (liberadoCompleto) {
+                aviso.classList.add('hidden');
+                aviso.textContent = '';
+            } else {
+                aviso.classList.remove('hidden');
+                aviso.textContent = `Libera ${descricaoPrazoLiberacao()} (junto com o fim da garantia).`;
+            }
         }
 
         function fecharRelatorio() {
@@ -1623,23 +1704,22 @@
         function showUpgradeModal(feature) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-            
+
+            // Quem já é assinante mas ainda está dentro dos 7 dias de garantia recebe uma
+            // explicação de prazo, não um pedido de upgrade: essa pessoa já pagou pelo
+            // ilimitado, então "Upgrade para continuar" soaria como cobrança em dobro.
+            const aguardandoLiberacaoDaAssinatura = isUnlimited && !liberadoCompleto;
+
             let message = '';
-            if (feature === 'planner') {
+            if (aguardandoLiberacaoDaAssinatura) {
+                message = `A geração realmente ilimitada da sua assinatura libera ${descricaoPrazoLiberacao()}, junto com o fim do prazo de garantia de 7 dias. Até lá, o limite é o mesmo do Plano Básico: ${BASIC_LIMIT} gerações por categoria e 30 ideias no planejador.`;
+            } else if (feature === 'planner') {
                 message = 'Para gerar planner acima de 30 dias, você precisa do Plano Ilimitado!';
             } else {
                 message = `Você atingiu o limite de ${BASIC_LIMIT} gerações. Upgrade para continuar!`;
             }
-            
-            modal.innerHTML = `
-                <div class="bg-white rounded-xl p-8 max-w-md w-full">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span class="text-2xl">🚀</span>
-                        </div>
-                        <h3 class="text-2xl font-bold text-brand-brown mb-4">Upgrade para Ilimitado</h3>
-                        <p class="text-gray-600 mb-6">${message}</p>
-                        
+
+            const beneficios = aguardandoLiberacaoDaAssinatura ? '' : `
                         <div class="bg-gray-50 rounded-lg p-4 mb-6">
                             <h4 class="font-semibold text-brand-brown mb-3">🌟 Benefícios Ilimitados:</h4>
                             <ul class="text-sm text-gray-700 space-y-2 text-left">
@@ -1649,20 +1729,33 @@
                                 <li>✅ Suporte prioritário</li>
                                 <li>✅ Novos recursos em primeira mão</li>
                             </ul>
-                        </div>
-                        
-                        <div class="space-y-3">
+                        </div>`;
+
+            const rodape = aguardandoLiberacaoDaAssinatura
+                ? `<button onclick="this.closest('.fixed').remove()" class="w-full bg-brand-orange text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">Entendi</button>`
+                : `<div class="space-y-3">
                             <button onclick="upgradeToUnlimited()" class="w-full bg-brand-orange text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
                                 Assinar Ilimitado - R$ 29,90/mês
                             </button>
                             <button onclick="this.closest('.fixed').remove()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
                                 Continuar com Limite
                             </button>
+                        </div>`;
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-8 max-w-md w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">${aguardandoLiberacaoDaAssinatura ? '⏳' : '🚀'}</span>
                         </div>
+                        <h3 class="text-2xl font-bold text-brand-brown mb-4">${aguardandoLiberacaoDaAssinatura ? 'Ilimitado libera em breve' : 'Upgrade para Ilimitado'}</h3>
+                        <p class="text-gray-600 mb-6">${message}</p>
+                        ${beneficios}
+                        ${rodape}
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
         
@@ -1703,16 +1796,26 @@
             el.classList.toggle('hidden', !message);
         }
 
-        function grantAccess(email, isUnlimitedPlan = false) {
+        // liberadoCompletoPlan/diasRestantesPlan vêm da resposta de verify.js. Os padrões
+        // (true/0) são usados só como fallback de segurança quando quem chama esta função
+        // não tem esses dados (ex.: sessão local salva antes desta trava existir); preferem
+        // liberar do que travar por engano um dado ausente, e a próxima revalidação com o
+        // servidor (até 24h depois) corrige o valor real.
+        function grantAccess(email, isUnlimitedPlan = false, liberadoCompletoPlan = true, diasRestantesPlan = 0) {
             localStorage.setItem('caktoUserData', JSON.stringify({
                 email,
                 isUnlimited: isUnlimitedPlan,
+                liberadoCompleto: liberadoCompletoPlan,
+                diasRestantesLiberacao: diasRestantesPlan,
                 verifiedAt: new Date().toISOString()
             }));
             hasBasicAccess = true;
             isUnlimited = isUnlimitedPlan;
+            liberadoCompleto = liberadoCompletoPlan;
+            diasRestantesLiberacao = diasRestantesPlan;
             updateAccessFeatures();
             updateGenerationCounters();
+            atualizarAvisoRelatorio();
             showMainApp(email);
         }
 
@@ -1754,7 +1857,7 @@
                         currency: 'BRL'
                     });
 
-                    grantAccess(email, result.isUnlimited);
+                    grantAccess(email, result.isUnlimited, result.liberadoCompleto, result.diasRestantes);
                     showNotification('Login realizado com sucesso!', 'success');
                 } else {
                     showNotification('Não encontramos uma compra aprovada com esse e-mail.', 'error');
@@ -1791,7 +1894,7 @@
                     const result = await checkAccessByEmail(callbackEmail);
                     if (result.approved) {
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        grantAccess(callbackEmail, result.isUnlimited);
+                        grantAccess(callbackEmail, result.isUnlimited, result.liberadoCompleto, result.diasRestantes);
                         showNotification('Pagamento confirmado! Bem-vindo(a).', 'success');
                         return true;
                     }
@@ -1889,6 +1992,8 @@
 
             hasBasicAccess = false;
             isUnlimited = false;
+            liberadoCompleto = false;
+            diasRestantesLiberacao = 7;
 
             showNotification('Logout realizado com sucesso!', 'success');
         }
@@ -1908,14 +2013,20 @@
                 const hoursSinceVerification = (new Date() - verifiedAt) / (1000 * 60 * 60);
 
                 if (hoursSinceVerification < 24) {
-                    grantAccess(sessionData.email, sessionData.isUnlimited);
+                    // sessionData pode ter sido salvo antes desta trava existir (sem os
+                    // campos liberadoCompleto/diasRestantesLiberacao); nesse caso tratamos
+                    // como liberado por segurança, e a revalidação com o servidor (assim
+                    // que passarem as 24h de cache) corrige o valor real automaticamente.
+                    const liberadoCompletoCache = sessionData.liberadoCompleto === undefined ? true : sessionData.liberadoCompleto;
+                    const diasRestantesCache = sessionData.diasRestantesLiberacao === undefined ? 0 : sessionData.diasRestantesLiberacao;
+                    grantAccess(sessionData.email, sessionData.isUnlimited, liberadoCompletoCache, diasRestantesCache);
                     return;
                 }
 
                 try {
                     const result = await checkAccessByEmail(sessionData.email);
                     if (result.approved) {
-                        grantAccess(sessionData.email, result.isUnlimited);
+                        grantAccess(sessionData.email, result.isUnlimited, result.liberadoCompleto, result.diasRestantes);
                         return;
                     }
                 } catch (error) {
